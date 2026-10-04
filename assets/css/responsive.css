@@ -1156,14 +1156,11 @@
     align-items: center;
     line-height: 1.25;
   }
-  .quick-action-card::after {
-    font-size: 16px;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
+  .quick-action-arrow {
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   /* ── User name hide on mobile ── */

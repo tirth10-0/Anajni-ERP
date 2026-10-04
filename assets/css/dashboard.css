@@ -297,22 +297,19 @@
   line-height: 1.2;
 }
 
-.quick-action-card::after {
-  content: '→';
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.quick-action-arrow {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2.5;
   color: var(--text-muted);
-  transition: var(--transition);
-  margin-left: auto;
   flex-shrink: 0;
+  margin-left: auto;
+  transition: var(--transition);
+  display: block;
 }
 
-.quick-action-card:hover::after {
+.quick-action-card:hover .quick-action-arrow {
   color: var(--accent);
   transform: translateX(3px);
 }
