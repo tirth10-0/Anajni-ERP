@@ -401,3 +401,114 @@
 .chart-card-header .btn:hover svg {
   transform: translateX(3px) !important;
 }
+
+/* ─── SPENDING GUIDELINES WIDGET (EXPENSES PAGE) ───────── */
+.spending-guidelines-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.spending-pillars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spending-pillar-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.spending-pillar-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.spending-pillar-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.spending-pillar-icon.green {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.spending-pillar-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.spending-pillar-content {
+  flex: 1;
+}
+
+.spending-pillar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.spending-pillar-desc {
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.spending-protip-box {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #e6f5ef 0%, #f0fdf4 100%);
+  border: 1px solid var(--badge-brand-border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(12, 57, 37, 0.04);
+}
+
+.spending-protip-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.spending-protip-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.spending-protip-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #061f14;
+  margin-top: 3px;
+}
+

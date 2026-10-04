@@ -279,11 +279,11 @@
 
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="manifest" href="/assets/manifest-BKfNMCks.json?v=1791036879151">
+<link rel="manifest" href="/assets/manifest-Di0Youpr.json">
   <meta name="theme-color" content="#0C3925">
-    <link rel="icon" type="image/png" href="/assets/logo-rounded-d20ZjoY5.png?v=1791036879151">
-  <link rel="apple-touch-icon" href="/assets/logo-rounded-d20ZjoY5.png?v=1791036879151">
-  <link rel="stylesheet" crossorigin href="/assets/style-R7RGLpTd.css">
+    <link rel="icon" type="image/png" href="/assets/logo-d20ZjoY5.png">
+  <link rel="apple-touch-icon" href="/assets/logo-d20ZjoY5.png">
+  <link rel="stylesheet" crossorigin href="/assets/style-DMW7G826.css">
 </head>
 <body>
 
@@ -328,7 +328,7 @@
   </div>
 </div>
 
-<script src="assets/js/database.js?v=1791097099590"></script>
+<script src="assets/js/database.js?v=1791115772679"></script>
 <script>
 async function handleLogin(e) {
   e.preventDefault();
@@ -372,7 +372,7 @@ async function handleLogin(e) {
     if (success) {
       localStorage.setItem('admin_logged_in', 'true');
       localStorage.setItem('admin_user', email);
-      window.location.replace('/pages/dashboard.html');
+      window.location.replace('./pages/dashboard.html');
     } else {
       errorText.textContent = 'Invalid username or password (minimum 4 characters)';
       errorDiv.classList.add('show');
@@ -391,12 +391,12 @@ async function handleLogin(e) {
 // Check if already logged in
 const isLocalAuth = localStorage.getItem('admin_logged_in') === 'true';
 if (isLocalAuth) {
-  window.location.replace('/pages/dashboard.html');
+  window.location.replace('./pages/dashboard.html');
 } else if (window.dbClient && window.dbClient.auth) {
   window.dbClient.auth.getSession().then(({ data: { session } }) => {
     if (session) {
       localStorage.setItem('admin_logged_in', 'true');
-      window.location.replace('/pages/dashboard.html');
+      window.location.replace('./pages/dashboard.html');
     }
   }).catch(() => {});
 }

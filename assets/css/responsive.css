@@ -1983,3 +1983,15 @@ body { overflow-x: hidden; }
   }
 }
 
+@media (max-width: 640px) {
+  .spending-guidelines-body {
+    padding: 16px !important;
+    gap: 14px !important;
+  }
+  .spending-pillar-item {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+}
+
+
