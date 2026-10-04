@@ -19,7 +19,8 @@ if ('caches' in window) {
 (function() {
   const pathname = window.location.pathname;
   const isLoginPage = pathname.includes('login.html');
-  const loginUrl = '/login.html';
+  const isPagesDir = window.location.pathname.includes('/pages/');
+  const loginUrl = isPagesDir ? '../login.html' : './login.html';
 
   // If already authenticated via local session flag, bypass strict Supabase token requirement
   const localAuth = localStorage.getItem('admin_logged_in') === 'true';
@@ -356,7 +357,7 @@ function handleLogout() {
     }
     showToast('Logged out successfully', 'success', 1800);
     setTimeout(() => {
-      window.location.replace('/login.html');
+      window.location.replace(window.location.pathname.includes('/pages/') ? '../login.html' : './login.html');
     }, 300);
   });
 }
