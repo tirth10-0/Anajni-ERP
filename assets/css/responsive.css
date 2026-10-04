@@ -1162,6 +1162,10 @@
     flex-shrink: 0;
     margin-left: auto;
   }
+  .quick-action-card::after {
+    content: none !important;
+    display: none !important;
+  }
 
   /* ── User name hide on mobile ── */
   .user-name { display: none; }

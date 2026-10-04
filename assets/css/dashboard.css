@@ -309,6 +309,11 @@
   display: block;
 }
 
+.quick-action-card::after {
+  content: none !important;
+  display: none !important;
+}
+
 .quick-action-card:hover .quick-action-arrow {
   color: var(--accent);
   transform: translateX(3px);
