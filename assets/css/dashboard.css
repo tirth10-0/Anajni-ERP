@@ -292,18 +292,29 @@
   font-weight: 600;
   text-align: left;
   flex: 1;
+  display: flex;
+  align-items: center;
+  line-height: 1.2;
 }
 
 .quick-action-card::after {
   content: '→';
-  font-size: 14px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-muted);
   transition: var(--transition);
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .quick-action-card:hover::after {
   color: var(--accent);
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
 .transaction-stat-card .transaction-stat-top {
