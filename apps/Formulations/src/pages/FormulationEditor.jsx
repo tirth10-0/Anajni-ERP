@@ -470,7 +470,7 @@ const FormulationEditor = () => {
                 </div>
               </div>
 
-              <div style={{ overflowX: 'auto', minHeight: '340px', paddingBottom: activeIngredientDropdownIndex !== null ? '120px' : '30px' }}>
+              <div style={{ overflowX: 'auto', paddingBottom: activeIngredientDropdownIndex !== null ? '180px' : '4px' }}>
                 <table className="line-items-table">
                   <thead>
                     <tr>
@@ -684,11 +684,11 @@ const FormulationEditor = () => {
             </div>
 
             {/* Actions Bar */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button onClick={handleCancel} className="btn btn-secondary" style={{ padding: '12px 24px' }}>
+            <div className="recipe-commit-actions" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', width: '100%', margin: '24px auto', textAlign: 'center' }}>
+              <button onClick={handleCancel} className="btn btn-secondary" style={{ padding: '12px 28px' }}>
                 Cancel
               </button>
-              <button onClick={handleSave} className="btn btn-primary" style={{ padding: '12px 32px' }}>
+              <button onClick={handleSave} className="btn btn-primary" style={{ padding: '12px 36px' }}>
                 {id ? 'Update Formulation' : 'Commit Recipe'}
               </button>
             </div>
