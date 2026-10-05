@@ -229,7 +229,7 @@
 
 /* Zebra Striping using crisp modern contrast */
 .data-table tbody tr:nth-child(even) {
-  background: #f8fafc;
+  background: #eaf2ec;
 }
 
 .data-table tbody tr:nth-child(odd) {
@@ -237,7 +237,7 @@
 }
 
 .data-table tbody tr:hover {
-  background: #eef8f4 !important;
+  background: #d6eee0 !important;
 }
 
 /* ─── PACKAGING GROUPED ROWS ──────────────────────────── */
@@ -884,13 +884,13 @@
 .top-summary-table tbody tr:nth-child(even),
 #top-products-table tbody tr:nth-child(even),
 #top-clients-table tbody tr:nth-child(even) {
-  background: #f8fafc !important;
+  background: #eaf2ec !important;
 }
 
 .top-summary-table tbody tr:hover,
 #top-products-table tbody tr:hover,
 #top-clients-table tbody tr:hover {
-  background: #eef8f4 !important;
+  background: #d6eee0 !important;
 }
 
 .top-summary-table tbody td,

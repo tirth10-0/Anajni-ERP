@@ -156,8 +156,20 @@ const FormulationCard = ({ formulation, onEdit, onDuplicate, onDelete, onCalcula
       </div>
 
       {/* Composition Body */}
-      <div style={{ padding: '20px', flex: 1, background: 'rgba(0,0,0,0.1)' }}>
-        <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: '10px' }}>
+      <div style={{
+        padding: '18px 20px',
+        flex: 1,
+        background: '#f4f9f6',
+        borderTop: '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)'
+      }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: '700',
+          color: 'var(--accent, #0C3925)',
+          letterSpacing: '0.06em',
+          marginBottom: '10px'
+        }}>
           CHEMICAL COMPOSITION
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -165,18 +177,27 @@ const FormulationCard = ({ formulation, onEdit, onDuplicate, onDelete, onCalcula
             <div
               key={index}
               style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
+                background: '#ffffff',
+                border: '1px solid #d1e5db',
                 borderRadius: '8px',
-                padding: '4px 8px',
-                fontSize: '11px',
+                padding: '5px 10px',
+                fontSize: '11.5px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '8px',
+                boxShadow: '0 1px 2px rgba(12, 57, 37, 0.05)'
               }}
             >
-              <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{ing.name}</span>
-              <span style={{ color: 'var(--accent)', fontWeight: '700', fontFamily: 'monospace' }}>
+              <span style={{ color: 'var(--text-primary, #0f172a)', fontWeight: '600' }}>{ing.name}</span>
+              <span style={{
+                color: 'var(--accent, #0C3925)',
+                fontWeight: '700',
+                fontFamily: 'monospace',
+                background: '#e6f5ee',
+                padding: '2px 7px',
+                borderRadius: '4px',
+                fontSize: '11px'
+              }}>
                 {ing.percentage > 0 ? `${ing.percentage}%` : `${ing.quantity} ${ing.unit || formulation.baseUnit}`}
               </span>
             </div>

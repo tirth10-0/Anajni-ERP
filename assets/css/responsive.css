@@ -707,7 +707,7 @@
   .top-summary-table tbody tr:nth-child(even),
   #top-products-table tbody tr:nth-child(even),
   #top-clients-table tbody tr:nth-child(even) {
-    background: #f8fafc !important;
+    background: #eaf2ec !important;
   }
 
   .top-summary-table th,
