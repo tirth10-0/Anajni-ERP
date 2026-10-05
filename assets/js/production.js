@@ -237,7 +237,7 @@ function renderIngredientsTable() {
       </td>
       <td>
         <span class="mobile-label">Unit</span>
-        <select class="form-select" onchange="updateIngredient(${idx}, 'unit', this.value)">
+        <select class="form-select" data-native="true" onchange="updateIngredient(${idx}, 'unit', this.value)">
           <option value="Kg" ${unitLabel === 'Kg' || unitLabel === 'kg' ? 'selected' : ''}>Kg</option>
           <option value="Litre" ${unitLabel === 'Litre' || unitLabel === 'L' || unitLabel === 'litre' ? 'selected' : ''}>Litre</option>
           <option value="g" ${unitLabel === 'g' || unitLabel === 'G' ? 'selected' : ''}>g</option>
@@ -248,7 +248,7 @@ function renderIngredientsTable() {
       </td>
       <td>
         <span class="mobile-label">Action</span>
-        <select class="form-select" style="font-weight: bold; color: ${line.action === 'INCREASE' ? 'var(--success)' : 'var(--danger)'};" onchange="updateIngredient(${idx}, 'action', this.value)">
+        <select class="form-select" data-native="true" style="font-weight: bold; color: ${line.action === 'INCREASE' ? 'var(--success)' : 'var(--danger)'};" onchange="updateIngredient(${idx}, 'action', this.value)">
           <option value="DECREASE" ${line.action === 'DECREASE' ? 'selected' : ''}>DECREASE</option>
           <option value="INCREASE" ${line.action === 'INCREASE' ? 'selected' : ''}>INCREASE</option>
         </select>
@@ -263,9 +263,14 @@ function renderIngredientsTable() {
   }).join('');
   
   setTimeout(() => {
-    if (window.UTILS?.initAllAutocompleteSelects) {
-      UTILS.initAllAutocompleteSelects();
-    }
+    document.querySelectorAll('.uss-inventory-select').forEach(sel => {
+      if (!sel.dataset.ussInitialized && window.UniversalSearchSelect) {
+        new UniversalSearchSelect(sel);
+        sel.dataset.ussInitialized = 'true';
+      } else if (sel._ussInstance) {
+        sel._ussInstance.updateOptions();
+      }
+    });
   }, 10);
 }
 

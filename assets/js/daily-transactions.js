@@ -80,12 +80,29 @@ function renderLowStockAlerts() {
 
 function getCategorizedMaterials(category) {
   const cat = String(category).toLowerCase().trim();
+  const techKeywords = [
+    'technical', 'technicals',
+    'insecticide', 'insecticides',
+    'fungicide', 'fungicides',
+    'herbicide', 'herbicides',
+    'pgr',
+    'solvent', 'solvents'
+  ];
   
   if (cat === 'technical') {
-    return inventoryItems.filter(item => String(item.category).toLowerCase().trim() === 'technical');
+    return inventoryItems.filter(item => {
+      const c = String(item.category || '').toLowerCase().trim();
+      const s = String(item.item_subtype || '').toLowerCase().trim();
+      return techKeywords.includes(c) || techKeywords.includes(s);
+    });
   }
   if (cat === 'others') {
-    return inventoryItems.filter(item => !['bottles', 'boxes', 'labels', 'technical'].includes(String(item.category).toLowerCase().trim()));
+    return inventoryItems.filter(item => {
+      const c = String(item.category || '').toLowerCase().trim();
+      const s = String(item.item_subtype || '').toLowerCase().trim();
+      const isTech = techKeywords.includes(c) || techKeywords.includes(s);
+      return !isTech && !['bottles', 'boxes', 'labels'].includes(c);
+    });
   }
   return inventoryItems.filter(item => String(item.category).toLowerCase().trim() === cat);
 }
@@ -103,6 +120,9 @@ function populateCategorizedMaterialSelects() {
 
     if (select._ussInstance) {
       select._ussInstance.updateOptions();
+    } else if (window.UniversalSearchSelect) {
+      new UniversalSearchSelect(select);
+      select.dataset.ussInitialized = 'true';
     }
 
     if (!select.dataset.materialChangeAttached) {
@@ -638,6 +658,11 @@ function goToTransactionStep(step) {
   if (prevBtn) prevBtn.style.display = transactionFormStep === 1 ? 'none' : 'inline-flex';
   if (nextBtn) nextBtn.style.display = transactionFormStep === 2 ? 'none' : 'inline-flex';
   if (saveBtn) saveBtn.style.display = transactionFormStep === 2 ? 'inline-flex' : 'none';
+
+  if (transactionFormStep === 2) {
+    populateCategorizedMaterialSelects();
+    attachCategorizedMaterialSearchListeners();
+  }
 }
 
 function transactionFormNextStep() {

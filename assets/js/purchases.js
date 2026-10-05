@@ -166,6 +166,16 @@ async function openAdd() {
   purchaseItems = [];
   await addPurchaseItem();
   UTILS.applyDefaultDateInputs(purchaseForm, { skipFieldNames: ['due_date'] });
+  const sup = document.getElementById('supplier-select');
+  if (sup) {
+    sup.value = '';
+    if (sup._ussInstance) {
+      sup._ussInstance.updateOptions();
+    } else if (window.UniversalSearchSelect) {
+      new UniversalSearchSelect(sup);
+      sup.dataset.ussInitialized = 'true';
+    }
+  }
   APP.openModal('purchase-modal');
 }
 
@@ -185,6 +195,18 @@ async function openEdit(id) {
     document.getElementById('modal-title').textContent = 'Edit Purchase';
     UTILS.populateForm('purchase-form', p);
     UTILS.applyDefaultDateInputs(document.getElementById('purchase-form'), { skipFieldNames: ['due_date'] });
+
+    const sup = document.getElementById('supplier-select');
+    if (sup) {
+      sup.value = p.supplier_id || '';
+      if (sup._ussInstance) {
+        sup._ussInstance.updateOptions();
+      } else if (window.UniversalSearchSelect) {
+        new UniversalSearchSelect(sup);
+        sup.dataset.ussInitialized = 'true';
+      }
+    }
+
     purchaseItems = p.items || [];
     
     // Map items list correctly

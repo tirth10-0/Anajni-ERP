@@ -14,7 +14,7 @@ import {
 const FormulationEditor = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { getFormulation, addFormulation, updateFormulation, products } = useFormulations();
+  const { getFormulation, addFormulation, updateFormulation, products, inventoryItems } = useFormulations();
   const errorRef = useRef(null);
 
   const [formulation, setFormulation] = useState({
@@ -31,6 +31,72 @@ const FormulationEditor = () => {
 
   const [errors, setErrors] = useState([]);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [activeIngredientDropdownIndex, setActiveIngredientDropdownIndex] = useState(null);
+  const [localInventory, setLocalInventory] = useState([]);
+
+  useEffect(() => {
+    if (inventoryItems && inventoryItems.length > 0) {
+      setLocalInventory(inventoryItems);
+    } else if (window.dbClient) {
+      window.dbClient.from('inventory_items').select('*').order('name').then(({ data }) => {
+        if (data) setLocalInventory(data);
+      });
+    } else {
+      fetch('/api/inventory').then(r => r.json()).then(data => {
+        if (Array.isArray(data)) setLocalInventory(data);
+      }).catch(() => {});
+    }
+  }, [inventoryItems]);
+
+  const technicalInventoryItems = useMemo(() => {
+    const items = (localInventory && localInventory.length > 0) ? localInventory : (inventoryItems || []);
+    const techKeywords = [
+      'technical', 'technicals',
+      'insecticide', 'insecticides',
+      'fungicide', 'fungicides',
+      'herbicide', 'herbicides',
+      'pgr',
+      'solvent', 'solvents',
+      'raw material'
+    ];
+    return items.filter(item => {
+      const c = String(item.category || '').toLowerCase().trim();
+      const s = String(item.item_subtype || '').toLowerCase().trim();
+      return techKeywords.includes(c) || techKeywords.includes(s);
+    });
+  }, [localInventory, inventoryItems]);
+
+  const getFilteredTechnicalItems = (query) => {
+    const q = (query || '').toLowerCase().trim();
+    if (!q) return technicalInventoryItems;
+    return technicalInventoryItems.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const cat = (item.category || '').toLowerCase();
+      const sub = (item.item_subtype || '').toLowerCase();
+      return name.includes(q) || cat.includes(q) || sub.includes(q);
+    });
+  };
+
+  const handleSelectIngredientItem = (index, item) => {
+    const newIngredients = [...formulation.ingredients];
+    let unit = newIngredients[index].unit || formulation.baseUnit;
+    if (item.unit) {
+      const norm = item.unit.toUpperCase().trim();
+      if (norm === 'LITRE' || norm === 'L') unit = 'L';
+      else if (norm === 'ML') unit = 'ML';
+      else if (norm === 'KG') unit = 'KG';
+      else if (norm === 'GM' || norm === 'GRAM' || norm === 'G') unit = 'GM';
+    }
+
+    newIngredients[index] = {
+      ...newIngredients[index],
+      name: item.name,
+      productId: String(item.id),
+      unit: unit
+    };
+    setFormulation({ ...formulation, ingredients: newIngredients });
+    setActiveIngredientDropdownIndex(null);
+  };
 
   useEffect(() => {
     const resetScroll = () => {
@@ -403,11 +469,11 @@ const FormulationEditor = () => {
                 </div>
               </div>
 
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', minHeight: '340px', paddingBottom: activeIngredientDropdownIndex !== null ? '120px' : '30px' }}>
                 <table className="line-items-table">
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left' }}>INGREDIENT NAME</th>
+                      <th style={{ textAlign: 'left', minWidth: '220px' }}>INGREDIENT NAME</th>
                       <th style={{ width: '100px', textAlign: 'center' }}>%</th>
                       <th style={{ width: '40px', textAlign: 'center', color: 'var(--accent)', fontWeight: '700' }}>OR</th>
                       <th style={{ width: '150px', textAlign: 'center' }}>QTY</th>
@@ -418,16 +484,105 @@ const FormulationEditor = () => {
                   <tbody>
                     {formulation.ingredients.map((ingredient, index) => (
                       <tr key={index}>
-                        <td>
+                        <td style={{ position: 'relative' }}>
                           <span className="mobile-label">Ingredient Name</span>
-                          <input
-                            type="text"
-                            value={ingredient.name}
-                            onChange={(e) => handleIngredientNameChange(index, e)}
-                            placeholder="Type chemical ingredient..."
-                            className="form-input"
-                            style={{ width: '100%' }}
-                          />
+                          <div style={{ position: 'relative', width: '100%' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                value={ingredient.name}
+                                onChange={(e) => {
+                                  handleIngredientNameChange(index, e);
+                                  setActiveIngredientDropdownIndex(index);
+                                }}
+                                onFocus={() => setActiveIngredientDropdownIndex(index)}
+                                onBlur={() => {
+                                  setTimeout(() => {
+                                    setActiveIngredientDropdownIndex(curr => curr === index ? null : curr);
+                                  }, 250);
+                                }}
+                                placeholder="Select or type technical..."
+                                className="form-input"
+                                style={{ width: '100%', paddingRight: '28px' }}
+                              />
+                              <button
+                                type="button"
+                                tabIndex="-1"
+                                onClick={() => setActiveIngredientDropdownIndex(curr => curr === index ? null : index)}
+                                style={{
+                                  position: 'absolute',
+                                  right: '8px',
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: '2px',
+                                  cursor: 'pointer',
+                                  color: 'var(--text-muted, #94a3b8)',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            {/* Dropdown Menu */}
+                            {activeIngredientDropdownIndex === index && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: 0,
+                                  right: 0,
+                                  backgroundColor: 'var(--surface, #14171d)',
+                                  border: '1px solid var(--border, rgba(255,255,255,0.15))',
+                                  borderRadius: '6px',
+                                  maxHeight: '220px',
+                                  overflowY: 'auto',
+                                  zIndex: 99999,
+                                  marginTop: '4px',
+                                  boxShadow: '0 12px 28px rgba(0,0,0,0.65)'
+                                }}
+                              >
+                                {getFilteredTechnicalItems(ingredient.name).map(item => (
+                                  <div
+                                    key={item.id}
+                                    onMouseDown={() => handleSelectIngredientItem(index, item)}
+                                    style={{
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      borderBottom: '1px solid var(--border, rgba(255,255,255,0.06))',
+                                      fontSize: '13px',
+                                      color: 'var(--text-primary, #fff)',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(12, 57, 37, 0.45)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                  >
+                                    <div>
+                                      <div style={{ fontWeight: 600 }}>{item.name}</div>
+                                      <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)' }}>
+                                        {item.category || 'Technical'}{item.item_subtype ? ` • ${item.item_subtype}` : ''}
+                                      </div>
+                                    </div>
+                                    {item.unit && (
+                                      <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px' }}>
+                                        {item.unit}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                                {getFilteredTechnicalItems(ingredient.name).length === 0 && (
+                                  <div style={{ padding: '10px 12px', fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
+                                    No matching technical inventory item. (Will keep custom: "{ingredient.name}")
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <span className="mobile-label">Percentage (%)</span>
