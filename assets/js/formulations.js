@@ -858,22 +858,19 @@ function calculateProductionNeeds() {
   }
 
   const formulationBatchSize = parseNumber(activeProductionFormulation.batch_size);
-  let missingStock = false;
 
   const rowsHtml = (activeProductionFormulation.ingredients || []).map(ingredient => {
     const requiredQty = getScaledRequirement(ingredient, batchSize, formulationBatchSize);
-    const stockItem = inventoryItems.find(item => item.id === ingredient.product_id);
-    const availableStock = stockItem ? parseNumber(stockItem.stock) : 0;
-    const unit = ingredient.unit || stockItem?.unit || activeProductionFormulation.batch_unit || 'L';
-    const isAvailable = availableStock >= requiredQty;
-    if (!isAvailable) missingStock = true;
+    const unit = ingredient.unit || activeProductionFormulation.batch_unit || 'L';
+    const pct = ingredient.percentage ? `${formatQty(ingredient.percentage)}%` : '—';
+    const cost = roundTo(requiredQty * parseNumber(ingredient.cost_per_unit));
 
     return `
       <tr>
         <td><strong>${escapeHtml(ingredient.product_name || 'Unnamed Ingredient')}</strong></td>
         <td>${formatQty(requiredQty)} ${escapeHtml(unit)}</td>
-        <td>${formatQty(availableStock)} ${escapeHtml(unit)}</td>
-        <td><span class="badge ${isAvailable ? 'badge-success' : 'badge-danger'}">${isAvailable ? 'Available' : 'Insufficient'}</span></td>
+        <td>${pct}</td>
+        <td>${UTILS.fmtCurrency(cost)}</td>
       </tr>
     `;
   }).join('');
@@ -884,18 +881,17 @@ function calculateProductionNeeds() {
         <tr>
           <th>Ingredient</th>
           <th>Req. Qty</th>
-          <th>Available Stock</th>
-          <th>Status</th>
+          <th>Percentage</th>
+          <th>Est. Cost</th>
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
     </table>
-    ${missingStock ? '<div style="color:var(--danger);font-weight:700;font-size:13px;margin-top:12px;">Warning: Insufficient raw materials stock. Production cannot proceed.</div>' : ''}
   `;
 
   const confirmBtn = document.querySelector('#production-modal .modal-footer .btn-primary');
   if (confirmBtn) {
-    confirmBtn.disabled = missingStock;
+    confirmBtn.disabled = false;
   }
 }
 
@@ -968,7 +964,7 @@ async function confirmProduction() {
       if (ingError) throw ingError;
     }
 
-    APP.showToast('Production run completed. Stocks updated.', 'success');
+    APP.showToast('Production calculation completed.', 'success');
     APP.closeModal('production-modal');
     await loadFormulations();
   } catch (err) {

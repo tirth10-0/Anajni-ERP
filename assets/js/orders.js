@@ -901,18 +901,6 @@ async function saveOrder() {
         }
       });
 
-      let formulationProductIds = new Set();
-      try {
-        const prodIds = orderItems.map(item => item.product_id).filter(Boolean);
-        if (prodIds.length > 0) {
-          const { data: formulationRows } = await window.dbClient
-            .from('formulations').select('product_id').in('product_id', prodIds);
-          formulationProductIds = new Set((formulationRows || []).map(row => String(row.product_id)));
-        }
-      } catch (fErr) {
-        console.warn('Formulation lookup notice:', fErr);
-      }
-
       // Fetch latest inventory items for auto-matching fallback
       let invList = [];
       try {
@@ -925,9 +913,8 @@ async function saveOrder() {
       for (const item of orderItems) {
         const product = cachedProductsList.find(p => p.id == item.product_id);
         if (!product) continue;
-        const hasFormulation = formulationProductIds.has(String(product.id));
         
-        if (!product.inventory_item_id && !hasFormulation) {
+        if (!product.inventory_item_id) {
           // Attempt auto-match by name with inventory_items
           const match = invList.find(inv => 
             String(inv.name || '').trim().toLowerCase() === String(product.name || '').trim().toLowerCase()
