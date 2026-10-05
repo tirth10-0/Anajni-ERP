@@ -181,8 +181,7 @@ async function loadCatalogProductSuggestions() {
 function renderTable(data) {
   const tbody = document.querySelector('#inventory-table tbody');
   if (!tbody) return;
-  const filtered = filterData(data);
-  filtered = UTILS.sortLatestFirst(filtered);
+  const filtered = UTILS.sortLatestFirst(filterData(data));
   document.getElementById('total-info').textContent = `${filtered.length} item${filtered.length !== 1 ? 's' : ''}`;
   if (!filtered.length) {
     tbody.innerHTML = `<tr class="empty-row"><td colspan="9"><div class="empty-state"><h3>No items found</h3></div></td></tr>`;
