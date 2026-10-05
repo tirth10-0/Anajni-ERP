@@ -303,7 +303,7 @@ const BatchCalculator = () => {
                     .line-items-table {
                       display: table !important;
                       width: 100% !important;
-                      min-width: 0 !important;
+                      min-width: 440px !important;
                     }
                     .line-items-table thead {
                       display: table-header-group !important;
@@ -324,10 +324,32 @@ const BatchCalculator = () => {
                     .line-items-table th, 
                     .line-items-table td {
                       display: table-cell !important;
-                      padding: 8px 4px !important;
-                      font-size: 11px !important;
+                      padding: 10px 8px !important;
+                      font-size: 12px !important;
                       border-bottom: 1px solid var(--border) !important;
-                      width: auto !important;
+                    }
+                    .line-items-table th:nth-child(1),
+                    .line-items-table td:nth-child(1) {
+                      min-width: 160px !important;
+                      max-width: 220px !important;
+                      word-break: break-word !important;
+                      overflow-wrap: anywhere !important;
+                      white-space: normal !important;
+                    }
+                    .line-items-table th:nth-child(2),
+                    .line-items-table td:nth-child(2) {
+                      min-width: 65px !important;
+                      white-space: nowrap !important;
+                    }
+                    .line-items-table th:nth-child(3),
+                    .line-items-table td:nth-child(3) {
+                      min-width: 110px !important;
+                      white-space: nowrap !important;
+                    }
+                    .line-items-table th:nth-child(4),
+                    .line-items-table td:nth-child(4) {
+                      min-width: 95px !important;
+                      white-space: nowrap !important;
                     }
                     .line-items-table td .mobile-label {
                       display: none !important;
@@ -343,6 +365,8 @@ const BatchCalculator = () => {
                     }
                     .action-btn-full {
                       width: 100% !important;
+                      display: inline-flex !important;
+                      align-items: center !important;
                       justify-content: center !important;
                     }
                   }
@@ -401,32 +425,40 @@ const BatchCalculator = () => {
               <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', letterSpacing: '0.08em', marginBottom: '16px', textTransform: 'uppercase' }}>
                 Calculated Ingredient Quantities
               </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table className="line-items-table">
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+                <table className="line-items-table" style={{ width: '100%', minWidth: '440px' }}>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left' }}>INGREDIENT NAME</th>
-                      <th style={{ width: '120px', textAlign: 'center' }}>%</th>
-                      <th style={{ width: '150px', textAlign: 'right' }}>REQUIRED QTY</th>
-                      <th style={{ width: '150px', textAlign: 'right' }}>EST. COST</th>
+                      <th style={{ textAlign: 'left', minWidth: '160px', padding: '10px 8px' }}>INGREDIENT NAME</th>
+                      <th style={{ width: '80px', minWidth: '65px', textAlign: 'center', padding: '10px 8px', whiteSpace: 'nowrap' }}>%</th>
+                      <th style={{ width: '130px', minWidth: '110px', textAlign: 'right', padding: '10px 8px', whiteSpace: 'nowrap' }}>REQUIRED QTY</th>
+                      <th style={{ width: '120px', minWidth: '95px', textAlign: 'right', padding: '10px 8px', whiteSpace: 'nowrap' }}>EST. COST</th>
                     </tr>
                   </thead>
                   <tbody>
                     {batchIngredients.map((ingredient, index) => (
                       <tr key={index}>
-                        <td style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
+                        <td style={{
+                          color: 'var(--text-primary)',
+                          fontWeight: '600',
+                          minWidth: '160px',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'normal',
+                          padding: '10px 8px'
+                        }}>
                           <span className="mobile-label">Ingredient Name</span>
                           {ingredient.name}
                         </td>
-                        <td style={{ textAlign: 'center', fontFamily: 'monospace', color: 'var(--accent)', fontWeight: '700' }}>
+                        <td style={{ textAlign: 'center', fontFamily: 'monospace', color: 'var(--accent)', fontWeight: '700', padding: '10px 8px', whiteSpace: 'nowrap' }}>
                           <span className="mobile-label">Percentage (%)</span>
                           {ingredient.percentage.toFixed(2)}%
                         </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '700' }}>
+                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '700', padding: '10px 8px', whiteSpace: 'nowrap' }}>
                           <span className="mobile-label">Required Qty</span>
                           {formatNumber(ingredient.quantity, 4)} {ingredient.unit || batchUnit}
                         </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--success)', fontWeight: '700' }}>
+                        <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--success)', fontWeight: '700', padding: '10px 8px', whiteSpace: 'nowrap' }}>
                           <span className="mobile-label">Est. Cost</span>
                           {formatCurrency(ingredient.quantity * ingredient.costPerUnit)}
                         </td>
@@ -435,15 +467,15 @@ const BatchCalculator = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="2" style={{ fontWeight: '800' }}>
+                      <td colSpan="2" style={{ fontWeight: '800', padding: '12px 8px' }}>
                         <span className="mobile-label">Total Summary</span>
                         TOTAL BATCH
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: 'var(--accent)' }}>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '15px', color: 'var(--accent)', padding: '12px 8px', whiteSpace: 'nowrap' }}>
                         <span className="mobile-label">Total Batch Yield</span>
                         {formatNumber(batchSize, 3)} {batchUnit}
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: 'var(--success)' }}>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '15px', color: 'var(--success)', padding: '12px 8px', whiteSpace: 'nowrap' }}>
                         <span className="mobile-label">Total Est. Cost</span>
                         {formatCurrency(totalBatchCost)}
                       </td>
@@ -458,9 +490,25 @@ const BatchCalculator = () => {
               <button
                 onClick={() => navigate('/')}
                 className="btn btn-secondary action-btn-full"
-                style={{ padding: '12px 24px' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 24px',
+                  fontWeight: '600'
+                }}
               >
-                ← Return to Dashboard
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  style={{ width: '16px', height: '16px', flexShrink: 0 }}
+                >
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                <span>Return to Dashboard</span>
               </button>
               
               <div className="action-buttons-right">
