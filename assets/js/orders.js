@@ -50,9 +50,9 @@ async function loadOrders() {
     await DB.initDB();
     await fetchPackagingData();
     
-    const { data: ordersData, error: ordersErr } = await window.dbClient.from('orders').select('*').order('created_at', { ascending: false });
+    const { data: ordersData, error: ordersErr } = await window.dbClient.from('orders').select('*').order('id', { ascending: false });
     if (ordersErr) throw ordersErr;
-    allOrders = ordersData || [];
+    allOrders = UTILS.sortByNumericIdDesc(ordersData || [], o => o.order_no || o.id);
     
     // Retrieve client list to map display names
     const { data: clientsData, error: clientsErr } = await window.dbClient.from('clients').select('*');

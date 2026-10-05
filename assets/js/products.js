@@ -453,7 +453,7 @@ function getFilteredProducts(data) {
     return haystack.includes(query);
   });
 
-  return list.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+  return list.sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
 function updatePageDebug(text, color) {
@@ -501,12 +501,12 @@ async function loadProducts() {
     
     // Fetch products and packaging options in parallel for high performance
     const [prodRes, packRes] = await Promise.all([
-      window.dbClient.from('products').select('*'),
+      window.dbClient.from('products').select('*').order('id', { ascending: false }),
       window.dbClient.from('product_packaging').select('*')
     ]);
     if (prodRes.error) throw prodRes.error;
     if (packRes.error) throw packRes.error;
-    allProducts = (prodRes.data || []).sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+    allProducts = (prodRes.data || []).sort((a, b) => (b.id || 0) - (a.id || 0));
     allPackagingOptions = packRes.data || [];
 
     syncCatalogUnits();

@@ -21,7 +21,7 @@ async function loadPurchases() {
     // Load purchasable items, purchases, suppliers, and purchase_items in parallel
     const [, pRes, supRes, piRes] = await Promise.all([
       refreshPurchasableItems(),
-      window.dbClient.from('purchases').select('*').order('date', { ascending: false }),
+      window.dbClient.from('purchases').select('*').order('id', { ascending: false }),
       window.dbClient.from('suppliers').select('*'),
       window.dbClient.from('purchase_items').select('*')
     ]);
@@ -37,6 +37,7 @@ async function loadPurchases() {
       p.items = allItems.filter(it => it.purchase_id === p.id);
     });
 
+    allPurchases = UTILS.sortByNumericIdDesc(allPurchases, p => p.purchase_no || p.id);
     renderTable(allPurchases);
     await populateSupplierSelect();
     
@@ -135,7 +136,7 @@ function filterAndRender() {
         itemsText.includes(q);
     });
   }
-  filtered = UTILS.sortByNumericIdDesc(filtered, p => p.purchase_no);
+  filtered = UTILS.sortByNumericIdDesc(filtered, p => p.purchase_no || p.id);
   renderTable(filtered);
 }
 

@@ -187,9 +187,9 @@ async function loadDailyTransactions() {
     }
     renderLowStockAlerts();
 
-    const { data: txnData, error: txnErr } = await window.dbClient.from('daily_transactions').select('*').order('date', {ascending: false});
+    const { data: txnData, error: txnErr } = await window.dbClient.from('daily_transactions').select('*').order('id', { ascending: false });
     if (txnErr) throw txnErr;
-    allDailyTransactions = txnData || [];
+    allDailyTransactions = UTILS.sortByNumericIdDesc(txnData || [], t => t.txn_no || t.id);
 
     ['search-input', 'date-from-filter', 'date-to-filter'].forEach(id => {
       const el = document.getElementById(id);
@@ -290,7 +290,7 @@ function filterTransactions(data) {
 
     return true;
   });
-  return UTILS.sortByNumericIdDesc(list, t => t.txn_no);
+  return UTILS.sortByNumericIdDesc(list, t => t.txn_no || t.id);
 }
 
 function updateStats(data) {

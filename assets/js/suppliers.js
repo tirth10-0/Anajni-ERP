@@ -20,9 +20,9 @@ async function loadSuppliers() {
     await DB.initDB();
     
     console.log('Suppliers: Loading suppliers from backend API...');
-    const { data: suppliersData, error } = await window.dbClient.from('suppliers').select('*');
+    const { data: suppliersData, error } = await window.dbClient.from('suppliers').select('*').order('id', { ascending: false });
     if (error) throw error;
-    allSuppliers = (suppliersData || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    allSuppliers = (suppliersData || []).sort((a, b) => (b.id || 0) - (a.id || 0));
     
     renderTable(allSuppliers);
     
@@ -77,7 +77,7 @@ function filterAndRender() {
       (s.city || '').toLowerCase().includes(q)
     );
   }
-  filtered = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+  filtered = [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
   renderTable(filtered);
 }
 

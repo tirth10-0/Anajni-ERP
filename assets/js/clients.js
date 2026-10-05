@@ -20,9 +20,9 @@ async function loadClients() {
     await DB.initDB();
     
     console.log('Clients: Loading clients from backend API...');
-    const { data: clientsData, error } = await window.dbClient.from('clients').select('*');
+    const { data: clientsData, error } = await window.dbClient.from('clients').select('*').order('id', { ascending: false });
     if (error) throw error;
-    allClients = (clientsData || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    allClients = (clientsData || []).sort((a, b) => (b.id || 0) - (a.id || 0));
     
     filterAndRender();
     
@@ -53,7 +53,7 @@ function filterAndRender() {
   if (type) {
     filtered = filtered.filter(c => c.type === type);
   }
-  filtered = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+  filtered = [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
   renderTable(filtered);
 }
 
