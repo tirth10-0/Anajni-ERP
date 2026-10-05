@@ -908,6 +908,10 @@ async function saveInventoryItemAPI(payload) {
       }
     }
 
+    if (savedId) {
+      await window.INVENTORY_SERVICE.syncItemStock(savedId);
+    }
+
     return { success: true };
   } catch (err) {
     throw err;

@@ -318,6 +318,7 @@ async function revertProductionStock(prodBatch) {
           purchase_price: 0
         }]);
       }
+      await window.INVENTORY_SERVICE.syncItemStock(itemId);
     }
   }
 
@@ -464,6 +465,12 @@ async function saveProduction() {
               created_at: new Date().toISOString()
             }]);
           } catch (_) {}
+        }
+      }
+
+      for (const line of validLines) {
+        if (line.inventory_id) {
+          await window.INVENTORY_SERVICE.syncItemStock(parseInt(line.inventory_id, 10));
         }
       }
     }

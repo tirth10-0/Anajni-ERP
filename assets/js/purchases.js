@@ -424,6 +424,7 @@ async function savePurchaseDirect(payload, items) {
   const isEdit = !!editingPurchaseId;
   let purchaseId = editingPurchaseId;
   let purchaseNo = '';
+  const affectedItemIds = new Set();
 
   if (isEdit) {
     const updateData = {
@@ -439,6 +440,12 @@ async function savePurchaseDirect(payload, items) {
     };
     const { error: updErr } = await window.dbClient.from('purchases').update(updateData).eq('id', purchaseId);
     if (updErr) throw updErr;
+
+    // Fetch old batch item_ids to sync them later
+    const { data: oldBatches } = await window.dbClient.from('stock_batches').select('item_id').eq('purchase_id', purchaseId);
+    if (oldBatches) {
+      oldBatches.forEach(b => { if (b.item_id) affectedItemIds.add(b.item_id); });
+    }
 
     // Remove old items and old batches to re-sync
     await window.dbClient.from('purchase_items').delete().eq('purchase_id', purchaseId);
@@ -524,16 +531,31 @@ async function savePurchaseDirect(payload, items) {
         await window.dbClient.from('stock_batches').insert(stockBatches);
       }
     }
+
+    // Synchronize all affected inventory items
+    resolvedItems.forEach(it => {
+      if (it.item_id) affectedItemIds.add(parseInt(it.item_id, 10));
+    });
+    for (const itemId of affectedItemIds) {
+      await window.INVENTORY_SERVICE.syncItemStock(itemId);
+    }
   }
 
   return { success: true, purchase_id: purchaseId, purchase_no: purchaseNo };
 }
 
 async function deletePurchaseDirect(id) {
+  const { data: oldBatches } = await window.dbClient.from('stock_batches').select('item_id').eq('purchase_id', id);
+  const affectedItemIds = new Set((oldBatches || []).map(b => b.item_id));
+
   await window.dbClient.from('stock_batches').delete().eq('purchase_id', id);
   await window.dbClient.from('purchase_items').delete().eq('purchase_id', id);
   const { error } = await window.dbClient.from('purchases').delete().eq('id', id);
   if (error) throw error;
+
+  for (const itemId of affectedItemIds) {
+    await window.INVENTORY_SERVICE.syncItemStock(itemId);
+  }
   return { success: true };
 }
 

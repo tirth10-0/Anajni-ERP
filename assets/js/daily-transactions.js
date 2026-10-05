@@ -1,4 +1,4 @@
-﻿/* daily-transactions.js */
+/* daily-transactions.js */
 let allDailyTransactions = [];
 let editingDailyTransactionId = null;
 let materialsUsed = [];
@@ -149,10 +149,13 @@ async function loadDailyTransactions() {
 
     // Query stock_batches to calculate exact total available stock for all inventory items
     itemBatchStockMap = {};
-    const { data: batches } = await window.dbClient.from('stock_batches').select('item_id, current_qty').eq('item_type', 'Inventory');
+    const { data: batches } = await window.dbClient.from('stock_batches')
+      .select('item_id, current_qty')
+      .eq('item_type', 'Inventory')
+      .gt('current_qty', 0);
     if (batches) {
       batches.forEach(b => {
-        const qty = parseFloat(b.current_qty) || 0;
+        const qty = Math.max(0, parseFloat(b.current_qty) || 0);
         itemBatchStockMap[b.item_id] = (itemBatchStockMap[b.item_id] || 0) + qty;
       });
     }
@@ -525,54 +528,6 @@ async function saveTransaction() {
       material_summary: materialsUsed.map(m => m.item_name).join(', ')
     };
 
-async function adjustDailyInventoryStock(itemId, qtyDelta) {
-  if (!itemId || qtyDelta === 0) return;
-  try {
-    if (qtyDelta < 0) {
-      let remainingToDeduct = Math.abs(qtyDelta);
-      const { data: batches } = await window.dbClient.from('stock_batches')
-        .select('id, current_qty')
-        .eq('item_id', itemId)
-        .eq('item_type', 'Inventory')
-        .gt('current_qty', 0)
-        .order('id', { ascending: true });
-        
-      if (batches && batches.length > 0) {
-        for (const b of batches) {
-          if (remainingToDeduct <= 0) break;
-          const available = parseFloat(b.current_qty) || 0;
-          const deduct = Math.min(available, remainingToDeduct);
-          const newQty = available - deduct;
-          remainingToDeduct -= deduct;
-          await window.dbClient.from('stock_batches').update({ current_qty: newQty }).eq('id', b.id);
-        }
-      }
-    } else {
-      const { data: batches } = await window.dbClient.from('stock_batches')
-        .select('id, current_qty')
-        .eq('item_id', itemId)
-        .eq('item_type', 'Inventory')
-        .order('id', { ascending: false })
-        .limit(1);
-        
-      if (batches && batches.length > 0) {
-        const newQty = (parseFloat(batches[0].current_qty) || 0) + qtyDelta;
-        await window.dbClient.from('stock_batches').update({ current_qty: newQty }).eq('id', batches[0].id);
-      }
-    }
-
-    // Keep inventory_items.stock in sync
-    try {
-      const { data: bList } = await window.dbClient.from('stock_batches').select('current_qty').eq('item_id', itemId).eq('item_type', 'Inventory');
-      const newTotal = (bList || []).reduce((sum, b) => sum + (parseFloat(b.current_qty) || 0), 0);
-      await window.dbClient.from('inventory_items').update({ stock: newTotal }).eq('id', itemId);
-      itemBatchStockMap[itemId] = newTotal;
-    } catch (_) {}
-  } catch (e) {
-    console.warn('adjustDailyInventoryStock note:', e);
-  }
-}
-
     let txnId = editingDailyTransactionId;
 
     if (editingDailyTransactionId) {
@@ -580,7 +535,10 @@ async function adjustDailyInventoryStock(itemId, qtyDelta) {
       const { data: oldMats } = await window.dbClient.from('daily_transaction_materials').select('*').eq('daily_transaction_id', editingDailyTransactionId);
       if (oldMats) {
         for (const om of oldMats) {
-          await adjustDailyInventoryStock(om.item_id, parseFloat(om.quantity) || 0);
+          const item = inventoryItems.find(x => String(x.id) === String(om.item_id));
+          const baseUnit = item?.unit || om.unit;
+          const baseQty = UTILS.convertUnit(parseFloat(om.quantity) || 0, om.unit, baseUnit);
+          await window.INVENTORY_SERVICE.restoreStock(om.item_id, baseQty);
         }
       }
       
@@ -607,9 +565,12 @@ async function adjustDailyInventoryStock(itemId, qtyDelta) {
     if (newMats.length > 0) {
       await window.dbClient.from('daily_transaction_materials').insert(newMats);
       
-      // Deduct stock in stock_batches
+      // Deduct stock in stock_batches with unit conversion to base unit
       for (const m of newMats) {
-        await adjustDailyInventoryStock(m.item_id, -(parseFloat(m.quantity) || 0));
+        const item = inventoryItems.find(x => String(x.id) === String(m.item_id));
+        const baseUnit = item?.unit || m.unit;
+        const baseQty = UTILS.convertUnit(parseFloat(m.quantity) || 0, m.unit, baseUnit);
+        await window.INVENTORY_SERVICE.deductStock(m.item_id, baseQty);
       }
     }
 
@@ -627,11 +588,14 @@ async function adjustDailyInventoryStock(itemId, qtyDelta) {
 async function deleteTransaction(id) {
   APP.showConfirm('Delete this entry? All deducted inventory stock will be restored.', async () => {
     try {
-      // Restore stock in stock_batches
+      // Restore stock in stock_batches with unit conversion to base unit
       const { data: oldMats } = await window.dbClient.from('daily_transaction_materials').select('*').eq('daily_transaction_id', id);
       if (oldMats) {
         for (const om of oldMats) {
-          await adjustDailyInventoryStock(om.item_id, parseFloat(om.quantity) || 0);
+          const item = inventoryItems.find(x => String(x.id) === String(om.item_id));
+          const baseUnit = item?.unit || om.unit;
+          const baseQty = UTILS.convertUnit(parseFloat(om.quantity) || 0, om.unit, baseUnit);
+          await window.INVENTORY_SERVICE.restoreStock(om.item_id, baseQty);
         }
       }
       

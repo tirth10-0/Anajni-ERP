@@ -1030,84 +1030,33 @@ async function revertOrderStock(orderId) {
       const packMl = UTILS.parsePackSizeInMl(it.packing_size || it.packaging_size) || 1000;
       const volumeLiters = (packMl / 1000) * qty;
 
-      // Restore bottle stock if bottle used
-      if (it.bottle_inventory_id) {
+      // 1. Restore bottle stock if bottle used
+      if (it.bottle_inventory_id && qty > 0) {
         const bottleId = parseInt(it.bottle_inventory_id, 10);
-        const { data: bBatches } = await window.dbClient.from('stock_batches')
-          .select('id, current_qty')
-          .eq('item_id', bottleId)
-          .eq('item_type', 'Inventory')
-          .order('id', { ascending: false })
-          .limit(1);
-
-        if (bBatches && bBatches.length > 0) {
-          const cur = parseFloat(bBatches[0].current_qty) || 0;
-          await window.dbClient.from('stock_batches').update({ current_qty: cur + qty }).eq('id', bBatches[0].id);
-        }
-        try {
-          const { data: invRow } = await window.dbClient.from('inventory_items').select('stock').eq('id', bottleId).single();
-          if (invRow) {
-            await window.dbClient.from('inventory_items').update({ stock: (parseFloat(invRow.stock) || 0) + qty }).eq('id', bottleId);
-          }
-        } catch (_) {}
+        await window.INVENTORY_SERVICE.restoreStock(bottleId, qty);
       }
 
-      // Check formulation ingredients
-      const { data: formulations } = await window.dbClient.from('formulations').select('*').eq('product_id', it.product_id).limit(1);
-      const formulation = formulations && formulations[0];
+      // 2. Restore technical stock
+      let techId = it.inventory_item_id;
+      if (!techId && it.product_id) {
+        const { data: pRow } = await window.dbClient.from('products').select('inventory_item_id, name').eq('id', it.product_id).single();
+        if (pRow && pRow.inventory_item_id) techId = pRow.inventory_item_id;
+      }
+      if (!techId) {
+        const pName = it.product_name || '';
+        const { data: matchedItems } = await window.dbClient.from('inventory_items').select('id, unit, category').ilike('name', pName.trim());
+        const techMatch = matchedItems?.find(m => String(m.category).toLowerCase().trim() === 'technical') || matchedItems?.[0];
+        if (techMatch) techId = techMatch.id;
+      }
 
-      if (formulation && parseFloat(formulation.batch_size) > 0) {
-        const { data: ings } = await window.dbClient.from('formulation_ingredients').select('*').eq('formulation_id', formulation.id);
-        if (ings && ings.length > 0) {
-          for (const ing of ings) {
-            const ingQtyNeeded = (volumeLiters / parseFloat(formulation.batch_size)) * (parseFloat(ing.quantity) || 0);
-            const ingItemId = parseInt(ing.product_id, 10);
-
-            const { data: iBatches } = await window.dbClient.from('stock_batches')
-              .select('id, current_qty')
-              .eq('item_id', ingItemId)
-              .eq('item_type', 'Inventory')
-              .order('id', { ascending: false })
-              .limit(1);
-
-            if (iBatches && iBatches.length > 0) {
-              const cur = parseFloat(iBatches[0].current_qty) || 0;
-              await window.dbClient.from('stock_batches').update({ current_qty: cur + ingQtyNeeded }).eq('id', iBatches[0].id);
-            }
-            try {
-              const { data: invRow } = await window.dbClient.from('inventory_items').select('stock').eq('id', ingItemId).single();
-              if (invRow) {
-                await window.dbClient.from('inventory_items').update({ stock: (parseFloat(invRow.stock) || 0) + ingQtyNeeded }).eq('id', ingItemId);
-              }
-            } catch (_) {}
-          }
+      if (techId) {
+        const { data: techItem } = await window.dbClient.from('inventory_items').select('id, unit').eq('id', techId).single();
+        let restoreQty = volumeLiters;
+        if (techItem && techItem.unit) {
+          restoreQty = UTILS.convertUnit(volumeLiters, 'Litre', techItem.unit);
         }
-      } else {
-        // Deduct/restore direct technical item if mapped
-        let techId = it.inventory_item_id;
-        if (!techId) {
-          const { data: pRow } = await window.dbClient.from('products').select('inventory_item_id').eq('id', it.product_id).single();
-          if (pRow && pRow.inventory_item_id) techId = pRow.inventory_item_id;
-        }
-
-        if (techId) {
-          const { data: tBatches } = await window.dbClient.from('stock_batches')
-            .select('id, current_qty')
-            .eq('item_id', techId)
-            .eq('item_type', 'Inventory')
-            .order('id', { ascending: false })
-            .limit(1);
-
-          if (tBatches && tBatches.length > 0) {
-            const cur = parseFloat(tBatches[0].current_qty) || 0;
-            await window.dbClient.from('stock_batches').update({ current_qty: cur + volumeLiters }).eq('id', tBatches[0].id);
-          }
-          try {
-            const { data: invRow } = await window.dbClient.from('inventory_items').select('stock').eq('id', techId).single();
-            if (invRow) {
-              await window.dbClient.from('inventory_items').update({ stock: (parseFloat(invRow.stock) || 0) + volumeLiters }).eq('id', techId);
-            }
-          } catch (_) {}
+        if (restoreQty > 0) {
+          await window.INVENTORY_SERVICE.restoreStock(techId, restoreQty);
         }
       }
     }
@@ -1141,100 +1090,32 @@ async function insertOrderItemsAndSyncStock(orderId, items, orderNo) {
     await window.dbClient.from('order_items').insert([itemRow]);
 
     // 1. Deduct bottle stock if selected
-    if (it.bottle_inventory_id) {
+    if (it.bottle_inventory_id && qty > 0) {
       const bottleId = parseInt(it.bottle_inventory_id, 10);
-      let remainingBottle = qty;
-      const { data: bBatches } = await window.dbClient.from('stock_batches')
-        .select('*')
-        .eq('item_id', bottleId)
-        .eq('item_type', 'Inventory')
-        .gt('current_qty', 0)
-        .order('id', { ascending: true });
-
-      if (bBatches && bBatches.length > 0) {
-        for (const batch of bBatches) {
-          if (remainingBottle <= 0) break;
-          const cur = parseFloat(batch.current_qty) || 0;
-          const deduct = Math.min(cur, remainingBottle);
-          await window.dbClient.from('stock_batches').update({ current_qty: Math.max(0, cur - deduct) }).eq('id', batch.id);
-          remainingBottle -= deduct;
-        }
-      }
-      try {
-        const { data: invRow } = await window.dbClient.from('inventory_items').select('stock').eq('id', bottleId).single();
-        if (invRow) {
-          await window.dbClient.from('inventory_items').update({ stock: Math.max(0, (parseFloat(invRow.stock) || 0) - qty) }).eq('id', bottleId);
-        }
-      } catch (_) {}
+      await window.INVENTORY_SERVICE.deductStock(bottleId, qty);
     }
 
-    // 2. Deduct product / ingredients stock
-    const { data: formulations } = await window.dbClient.from('formulations').select('*').eq('product_id', it.product_id).limit(1);
-    const formulation = formulations && formulations[0];
+    // 2. Deduct Technical stock
+    let techId = it.inventory_item_id;
+    if (!techId && it.product_id) {
+      const { data: pRow } = await window.dbClient.from('products').select('inventory_item_id, name').eq('id', it.product_id).single();
+      if (pRow && pRow.inventory_item_id) techId = pRow.inventory_item_id;
+    }
+    if (!techId) {
+      const pName = it.product_name || '';
+      const { data: matchedItems } = await window.dbClient.from('inventory_items').select('id, unit, category').ilike('name', pName.trim());
+      const techMatch = matchedItems?.find(m => String(m.category).toLowerCase().trim() === 'technical') || matchedItems?.[0];
+      if (techMatch) techId = techMatch.id;
+    }
 
-    if (formulation && parseFloat(formulation.batch_size) > 0) {
-      const { data: ings } = await window.dbClient.from('formulation_ingredients').select('*').eq('formulation_id', formulation.id);
-      if (ings && ings.length > 0) {
-        for (const ing of ings) {
-          const ingQtyNeeded = (volumeLiters / parseFloat(formulation.batch_size)) * (parseFloat(ing.quantity) || 0);
-          const ingItemId = parseInt(ing.product_id, 10);
-          let remainingIng = ingQtyNeeded;
-
-          const { data: iBatches } = await window.dbClient.from('stock_batches')
-            .select('*')
-            .eq('item_id', ingItemId)
-            .eq('item_type', 'Inventory')
-            .gt('current_qty', 0)
-            .order('id', { ascending: true });
-
-          if (iBatches && iBatches.length > 0) {
-            for (const batch of iBatches) {
-              if (remainingIng <= 0) break;
-              const cur = parseFloat(batch.current_qty) || 0;
-              const deduct = Math.min(cur, remainingIng);
-              await window.dbClient.from('stock_batches').update({ current_qty: Math.max(0, cur - deduct) }).eq('id', batch.id);
-              remainingIng -= deduct;
-            }
-          }
-          try {
-            const { data: invRow } = await window.dbClient.from('inventory_items').select('stock').eq('id', ingItemId).single();
-            if (invRow) {
-              await window.dbClient.from('inventory_items').update({ stock: Math.max(0, (parseFloat(invRow.stock) || 0) - ingQtyNeeded) }).eq('id', ingItemId);
-            }
-          } catch (_) {}
-        }
+    if (techId) {
+      const { data: techItem } = await window.dbClient.from('inventory_items').select('id, unit').eq('id', techId).single();
+      let deductQty = volumeLiters;
+      if (techItem && techItem.unit) {
+        deductQty = UTILS.convertUnit(volumeLiters, 'Litre', techItem.unit);
       }
-    } else {
-      let techId = it.inventory_item_id;
-      if (!techId) {
-        const { data: pRow } = await window.dbClient.from('products').select('inventory_item_id').eq('id', it.product_id).single();
-        if (pRow && pRow.inventory_item_id) techId = pRow.inventory_item_id;
-      }
-
-      if (techId) {
-        let remainingTech = volumeLiters;
-        const { data: tBatches } = await window.dbClient.from('stock_batches')
-          .select('*')
-          .eq('item_id', techId)
-          .eq('item_type', 'Inventory')
-          .gt('current_qty', 0)
-          .order('id', { ascending: true });
-
-        if (tBatches && tBatches.length > 0) {
-          for (const batch of tBatches) {
-            if (remainingTech <= 0) break;
-            const cur = parseFloat(batch.current_qty) || 0;
-            const deduct = Math.min(cur, remainingTech);
-            await window.dbClient.from('stock_batches').update({ current_qty: Math.max(0, cur - deduct) }).eq('id', batch.id);
-            remainingTech -= deduct;
-          }
-        }
-        try {
-          const { data: invRow } = await window.dbClient.from('inventory_items').select('stock').eq('id', techId).single();
-          if (invRow) {
-            await window.dbClient.from('inventory_items').update({ stock: Math.max(0, (parseFloat(invRow.stock) || 0) - volumeLiters) }).eq('id', techId);
-          }
-        } catch (_) {}
+      if (deductQty > 0) {
+        await window.INVENTORY_SERVICE.deductStock(techId, deductQty);
       }
     }
   }
