@@ -36,11 +36,11 @@
   font-weight: 500;
   line-height: 38px;
   outline: none;
-  caret-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
+  caret-color: var(--text-primary, #0f172a) !important;
+  user-select: text;
+  -webkit-user-select: text;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+  cursor: text;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
   box-sizing: border-box;
 }
@@ -66,7 +66,7 @@
 .uss-input:focus {
   border-color: #0C3925;
   box-shadow: 0 0 0 2px rgba(12, 57, 37, 0.2);
-  caret-color: transparent;
+  caret-color: var(--text-primary, #0f172a) !important;
 }
 
 .uss-input:focus ~ .uss-input-wrapper::after,

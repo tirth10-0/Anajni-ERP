@@ -65,10 +65,7 @@ class UniversalSearchSelect {
         this.input.className = 'uss-input';
         this.input.placeholder = this.options.placeholder;
         this.input.setAttribute('autocomplete', 'off');
-        if (!this.options.allowCustom) {
-            this.input.readOnly = true;
-            this.input.setAttribute('inputmode', 'none');
-        }
+        this.input.setAttribute('spellcheck', 'false');
         
         this.inputWrapper.appendChild(this.input);
         this.container.appendChild(this.inputWrapper);
@@ -138,8 +135,12 @@ class UniversalSearchSelect {
             }
             if (e.key === 'Enter' && this.isOpen) {
                 e.preventDefault();
-                const activeItem = UniversalSearchSelect.portal.querySelector('.uss-item.hover');
-                if (activeItem) this.selectItem(activeItem.dataset.value);
+                const activeItem = UniversalSearchSelect.portal.querySelector('.uss-item.hover') || UniversalSearchSelect.portal.querySelector('.uss-item');
+                if (activeItem) {
+                    this.selectItem(activeItem.dataset.value);
+                } else {
+                    this.close();
+                }
             }
         });
 
@@ -220,16 +221,17 @@ class UniversalSearchSelect {
         const portal = UniversalSearchSelect._getPortal();
         portal.classList.add('active');
 
-        // Only select input text if allowCustom is true, preventing caret/highlight in regular select mode
-        if (this.options.allowCustom) {
-            this.input.select();
-        }
+        // Select input text so user can immediately type to search
+        setTimeout(() => {
+            if (document.activeElement === this.input) {
+                this.input.select();
+            }
+        }, 0);
 
         // Mobile UX: Scroll input into visible area if keyboard might hide it
-        if (this.options.allowCustom && window.innerWidth <= 768) {
+        if (window.innerWidth <= 768) {
             setTimeout(() => {
                 this.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Reposition after scroll
                 setTimeout(() => this._positionPortal(), 300);
             }, 100);
         }
@@ -241,24 +243,44 @@ class UniversalSearchSelect {
         UniversalSearchSelect._getPortal().classList.remove('active');
         UniversalSearchSelect.activeInstance = null;
         
+        const val = this.input.value.trim();
         if (this.options.allowCustom) {
-            const val = this.input.value.trim();
             const match = this.data.find(d => d.value.toLowerCase() === val.toLowerCase() || d.text.toLowerCase() === val.toLowerCase());
             if (match) {
                 this.input.value = match.text;
-                this.select.value = match.value;
+                if (this.select.value !== match.value) {
+                    this.select.value = match.value;
+                    this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             } else if (val) {
                 this.input.value = val;
                 this._syncCustomValue(val);
             } else {
                 this.input.value = '';
-                this.select.value = '';
-                this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                if (this.select.value !== '') {
+                    this.select.value = '';
+                    this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             }
         } else {
-            // Sync input with select if empty or no match
-            const match = this.data.find(d => d.value === this.select.value);
-            this.input.value = match ? match.text : '';
+            const match = this.data.find(d => d.value.toLowerCase() === val.toLowerCase() || d.text.toLowerCase() === val.toLowerCase());
+            if (match) {
+                this.input.value = match.text;
+                if (this.select.value !== match.value) {
+                    this.select.value = match.value;
+                    this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } else if (!val) {
+                this.input.value = '';
+                if (this.select.value !== '') {
+                    this.select.value = '';
+                    this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } else {
+                // Revert to current selected item's text if no match
+                const curMatch = this.data.find(d => d.value === this.select.value);
+                this.input.value = curMatch ? curMatch.text : '';
+            }
         }
     }
 
@@ -269,10 +291,16 @@ class UniversalSearchSelect {
     }
 
     filter(query) {
-        this.filteredData = this.data.filter(item => 
-            item.text.toLowerCase().includes(query.toLowerCase())
-        );
+        const q = (query || '').trim().toLowerCase();
+        if (!q) {
+            this.filteredData = [...this.data];
+        } else {
+            this.filteredData = this.data.filter(item => 
+                item.text.toLowerCase().includes(q)
+            );
+        }
         this._renderDropdown();
+        this._positionPortal();
     }
 
     _renderDropdown() {

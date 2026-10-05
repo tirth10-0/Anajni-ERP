@@ -555,7 +555,7 @@ async function renderOrderItems() {
           if (!item.unit_price) item.unit_price = parseFloat(selOpt.sell_price || selOpt.selling_price) || 0;
         }
 
-        pkgSelectHtml = `<select class="form-select order-pack-select" data-idx="${idx}" onchange="onPackSizeChange(${idx}, this.value)">
+        pkgSelectHtml = `<select class="form-select order-pack-select" data-idx="${idx}" data-allow-custom="true" onchange="onPackSizeChange(${idx}, this.value)">
           ${optionsStr}
         </select>`;
       } else {
@@ -671,10 +671,11 @@ async function onProductSelectChange(idx, valOrEvt) {
 }
 
 async function onPackSizeChange(idx, val) {
-  console.log(`[OrderRow ${idx}] Pack size changed to:`, val);
+  let valStr = (val && typeof val === 'object' && val.target) ? val.target.value : val;
+  console.log(`[OrderRow ${idx}] Pack size changed to:`, valStr);
   const it = orderItems[idx];
   if (!it) return;
-  it.packaging_size = val;
+  it.packaging_size = valStr;
   const p = cachedProductsList.find(x => x.id == it.product_id);
   let pkgOptions = p?.packaging_options || [];
   if (!pkgOptions.length && it.product_id) {
@@ -688,7 +689,7 @@ async function onPackSizeChange(idx, val) {
     }
   }
 
-  const normVal = String(val).toLowerCase().replace(/\s+/g, '');
+  const normVal = String(valStr).toLowerCase().replace(/\s+/g, '');
   const matchOpt = pkgOptions.find(opt => {
     const rawSize = opt.packaging_size || opt.size || '';
     const cleaned = cleanSizeLabel(rawSize, p?.unit);
@@ -722,8 +723,9 @@ function onQtyChange(idx, val) {
 }
 
 function onBottleChange(idx, val) {
+  let valStr = (val && typeof val === 'object' && val.target) ? val.target.value : val;
   const it = orderItems[idx];
-  it.bottle_inventory_id = val ? parseInt(val) : null;
+  it.bottle_inventory_id = valStr ? parseInt(valStr) : null;
 }
 
 function onUnitPriceChange(idx, val) {
