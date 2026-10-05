@@ -51,6 +51,14 @@ button:focus {
   box-shadow: 0 0 0 2px rgba(12, 57, 37, 0.25) !important;
 }
 
+/* Ensure inline unit selects and flex inputs retain proportions */
+select[data-native="true"] {
+  display: inline-block !important;
+  appearance: menulist !important;
+  -webkit-appearance: menulist !important;
+  box-sizing: border-box !important;
+}
+
 /* Cyber panel glow effect */
 .cyber-panel {
   background: #14171d;

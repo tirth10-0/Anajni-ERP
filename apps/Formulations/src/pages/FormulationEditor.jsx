@@ -424,7 +424,7 @@ const FormulationEditor = () => {
 
                 <div className="form-group">
                   <label className="form-label">Base Volume / Output Capacity</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
                     <input
                       type="number"
                       value={formulation.baseVolume}
@@ -432,9 +432,10 @@ const FormulationEditor = () => {
                       min="0"
                       step="0.01"
                       className="form-input font-mono"
-                      style={{ flex: 1 }}
+                      style={{ flex: '1 1 auto', minWidth: '120px' }}
                     />
                     <select
+                      data-native="true"
                       value={formulation.baseUnit}
                       onChange={(e) => {
                         const newUnit = e.target.value;
@@ -449,7 +450,7 @@ const FormulationEditor = () => {
                         });
                       }}
                       className="form-input font-mono"
-                      style={{ width: '130px' }}
+                      style={{ width: '130px', minWidth: '130px', flexShrink: 0 }}
                     >
                       <option value="L">L (Liters)</option>
                       <option value="ML">ML (Milliliters)</option>
@@ -602,7 +603,7 @@ const FormulationEditor = () => {
                         </td>
                         <td>
                           <span className="mobile-label">Quantity</span>
-                          <div style={{ display: 'flex', gap: '4px' }}>
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', width: '100%' }}>
                             <input
                               type="number"
                               value={ingredient.quantity || ''}
@@ -611,9 +612,10 @@ const FormulationEditor = () => {
                               step="0.0001"
                               placeholder="0.00"
                               className="form-input font-mono text-center"
-                              style={{ flex: 1, minWidth: '60px' }}
+                              style={{ flex: '1 1 auto', minWidth: '60px' }}
                             />
                             <select
+                              data-native="true"
                               value={ingredient.unit || formulation.baseUnit}
                               onChange={(e) => {
                                 const newIngredients = [...formulation.ingredients];
@@ -624,7 +626,7 @@ const FormulationEditor = () => {
                                 setFormulation({ ...formulation, ingredients: newIngredients });
                               }}
                               className="form-input font-mono"
-                              style={{ width: '65px', padding: '4px', fontSize: '11px' }}
+                              style={{ width: '65px', minWidth: '65px', flexShrink: 0, padding: '4px', fontSize: '11px' }}
                             >
                               <option value="L">L</option>
                               <option value="ML">ML</option>

@@ -10,7 +10,7 @@ class UniversalSearchSelect {
     constructor(element, options = {}) {
         this.select = typeof element === 'string' ? document.getElementById(element) : element;
         if (!this.select) return;
-        if (this.select.getAttribute('data-native') === 'true') {
+        if (this.select.getAttribute('data-native') === 'true' || this.select.closest('#root')) {
             return;
         }
         this.select._ussInstance = this;
@@ -56,6 +56,15 @@ class UniversalSearchSelect {
         // Create container and input
         this.container = document.createElement('div');
         this.container.className = 'uss-container';
+        if (this.select.style.width) {
+            this.container.style.width = this.select.style.width;
+        }
+        if (this.select.style.minWidth) {
+            this.container.style.minWidth = this.select.style.minWidth;
+        }
+        if (this.select.style.flexShrink) {
+            this.container.style.flexShrink = this.select.style.flexShrink;
+        }
         
         this.inputWrapper = document.createElement('div');
         this.inputWrapper.className = 'uss-input-wrapper';
@@ -443,7 +452,7 @@ class UniversalSearchSelect {
     // Static helper to initialize all regular select elements unless explicitly excluded
     static initAll() {
         document.querySelectorAll('select').forEach(select => {
-            if (select.getAttribute('data-native') === 'true') {
+            if (select.getAttribute('data-native') === 'true' || select.closest('#root')) {
                 if (select._ussInstance) {
                     select._ussInstance.destroy();
                 }

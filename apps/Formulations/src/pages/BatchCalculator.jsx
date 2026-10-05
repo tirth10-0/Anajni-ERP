@@ -349,7 +349,7 @@ const BatchCalculator = () => {
                 `}} />
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Target Batch Size</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
                     <input
                       type="number"
                       value={batchSize}
@@ -357,13 +357,14 @@ const BatchCalculator = () => {
                       min="0"
                       step="0.01"
                       className="form-input font-mono"
-                      style={{ flex: 1 }}
+                      style={{ flex: '1 1 auto', minWidth: '100px' }}
                     />
                     <select
+                      data-native="true"
                       value={batchUnit}
                       onChange={(e) => setBatchUnit(e.target.value)}
                       className="form-input font-mono"
-                      style={{ width: '100px' }}
+                      style={{ width: '100px', minWidth: '100px', flexShrink: 0 }}
                     >
                       <option value="L">L</option>
                       <option value="ML">ML</option>
