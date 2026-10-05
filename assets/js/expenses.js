@@ -1,4 +1,4 @@
-﻿/* assets/js/expenses.js */
+/* assets/js/expenses.js */
 let allExpenses = [], editingExpenseId = null, expChart = null;
 
 function updatePageDebug(text, color) {
@@ -256,7 +256,7 @@ async function deleteExpense(id) {
         .eq('id', id);
       if (error) throw error;
 
-      APP.showToast('Expense deleted.', 'warning');
+      APP.showToast('Expense deleted.', 'success');
       setTimeout(() => loadExpenses(), 100);
     } catch (err) {
       console.error(err);

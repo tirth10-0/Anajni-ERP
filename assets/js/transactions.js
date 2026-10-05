@@ -221,7 +221,7 @@ async function deleteTxn(id) {
         .eq('id', id);
       if (error) throw error;
       
-      APP.showToast('Transaction deleted.', 'warning');
+      APP.showToast('Transaction deleted.', 'success');
       setTimeout(() => loadTransactions(), 100);
     } catch (err) {
       console.error(err);
@@ -438,7 +438,7 @@ async function deleteAccount(id) {
         .eq('id', id);
       if (error) throw error;
 
-      APP.showToast('Account deleted', 'warning');
+      APP.showToast('Account deleted', 'success');
       closeAccountForm();
       await loadAccounts();
       setTimeout(() => loadTransactions(), 100);

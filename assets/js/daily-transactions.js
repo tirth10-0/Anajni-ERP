@@ -603,7 +603,7 @@ async function deleteTransaction(id) {
       const { error } = await window.dbClient.from('daily_transactions').delete().eq('id', id);
       if (error) throw new Error(error.message || 'Failed to delete transaction');
 
-      APP.showToast('Entry deleted and inventory restored.', 'warning');
+      APP.showToast('Entry deleted and inventory restored.', 'success');
       setTimeout(() => loadDailyTransactions(), 100);
     } catch (err) {
       console.error('deleteTransaction failed:', err);
