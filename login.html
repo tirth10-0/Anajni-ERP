@@ -330,7 +330,7 @@
 async function handleLogin(e) {
   e.preventDefault();
   
-  const email = document.getElementById('username').value.trim();
+  const emailInput = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
   const btn = document.getElementById('login-btn');
   const btnText = document.getElementById('btn-text');
@@ -338,65 +338,58 @@ async function handleLogin(e) {
   const errorText = document.getElementById('error-text');
 
   btn.disabled = true;
-  btnText.innerHTML = '<span class="spinner"></span>Logging in...';
+  btnText.innerHTML = '<span class="spinner"></span>Verifying Credentials...';
   errorDiv.classList.remove('show');
 
   try {
-    let success = false;
+    if (!window.dbClient || !window.dbClient.auth) {
+      throw new Error('Database client not initialized. Please refresh the page.');
+    }
 
-    // First attempt Supabase Auth if available
-    if (window.dbClient && window.dbClient.auth) {
-      try {
-        const { data, error } = await window.dbClient.auth.signInWithPassword({
-          email: email.includes('@') ? email : `${email}@agro.local`,
-          password: password
-        });
-        if (!error && data?.session) {
-          success = true;
-        }
-      } catch (authErr) {
-        console.warn('Supabase auth attempt error:', authErr);
+    const email = emailInput.includes('@') ? emailInput : `${emailInput}@agro.local`;
+
+    const { data, error } = await window.dbClient.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+    if (error) {
+      let msg = error.message || 'Authentication failed.';
+      if (msg.toLowerCase().includes('invalid login credentials')) {
+        msg = 'Invalid username/email or password.';
+      } else if (msg.toLowerCase().includes('email not confirmed')) {
+        msg = 'User email is not confirmed in Supabase.';
       }
+      throw new Error(msg);
     }
 
-    // Default admin fallback for offline / single-tenant setup (admin / admin123 or any valid credentials)
-    if (!success) {
-      if ((email === 'admin' || email === 'admin@agro.local' || email.length > 0) && password.length >= 4) {
-        success = true;
-      }
+    if (!data?.session) {
+      throw new Error('No active session received from authentication server.');
     }
 
-    if (success) {
-      localStorage.setItem('admin_logged_in', 'true');
-      localStorage.setItem('admin_user', email);
-      window.location.replace('./pages/dashboard.html');
-    } else {
-      errorText.textContent = 'Invalid username or password (minimum 4 characters)';
-      errorDiv.classList.add('show');
-      btn.disabled = false;
-      btnText.textContent = 'Login to ERP';
-    }
+    localStorage.setItem('admin_user', data.user?.email || email);
+    window.location.replace('./pages/dashboard.html');
   } catch (err) {
     console.error('Login error:', err);
-    errorText.textContent = 'Connection error. Please try again.';
+    errorText.textContent = err.message || 'Connection error. Please try again.';
     errorDiv.classList.add('show');
     btn.disabled = false;
     btnText.textContent = 'Login to ERP';
   }
 }
 
-// Check if already logged in
-const isLocalAuth = localStorage.getItem('admin_logged_in') === 'true';
-if (isLocalAuth) {
-  window.location.replace('./pages/dashboard.html');
-} else if (window.dbClient && window.dbClient.auth) {
-  window.dbClient.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      localStorage.setItem('admin_logged_in', 'true');
-      window.location.replace('./pages/dashboard.html');
-    }
-  }).catch(() => {});
-}
+// Check if already authenticated with a valid Supabase session
+(async function checkExistingSession() {
+  localStorage.removeItem('admin_logged_in');
+  if (window.dbClient && window.dbClient.auth) {
+    try {
+      const { data: { session } } = await window.dbClient.auth.getSession();
+      if (session) {
+        window.location.replace('./pages/dashboard.html');
+      }
+    } catch (_) {}
+  }
+})();
 </script>
 </body>
 </html>

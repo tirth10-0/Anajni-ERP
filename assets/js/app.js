@@ -15,30 +15,62 @@ if ('caches' in window) {
   });
 }
 
-// Global Auth check
+// Global Auth check - Cryptographic Supabase Session Enforced
 (function() {
   const pathname = window.location.pathname;
   const isLoginPage = pathname.includes('login.html');
-  const isPagesDir = window.location.pathname.includes('/pages/');
+  if (isLoginPage) return;
+
+  const isPagesDir = pathname.includes('/pages/');
   const loginUrl = isPagesDir ? '../login.html' : './login.html';
 
-  // If already authenticated via local session flag, bypass strict Supabase token requirement
-  const localAuth = localStorage.getItem('admin_logged_in') === 'true';
-
-  if (window.dbClient && window.dbClient.auth) {
-    window.dbClient.auth.getSession().then(({ data: { session } }) => {
-      if (!session && !localAuth && !isLoginPage) {
-        window.location.replace(loginUrl);
-      }
-    }).catch(err => {
-      console.warn('Auth check error:', err);
-      if (!localAuth && !isLoginPage) {
-        window.location.replace(loginUrl);
-      }
-    });
-  } else if (!localAuth && !isLoginPage) {
+  function redirectToLogin() {
+    localStorage.removeItem('admin_logged_in');
+    localStorage.removeItem('admin_user');
     window.location.replace(loginUrl);
   }
+
+  async function verifySession() {
+    // If dbClient is not ready yet, wait briefly for database.js / Supabase CDN
+    let checks = 0;
+    while ((!window.dbClient || !window.dbClient.auth) && checks < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      checks++;
+    }
+
+    if (!window.dbClient || !window.dbClient.auth) {
+      console.warn('Supabase DB Client unavailable, redirecting to login.');
+      redirectToLogin();
+      return;
+    }
+
+    try {
+      const { data: { session }, error } = await window.dbClient.auth.getSession();
+      if (error || !session) {
+        redirectToLogin();
+        return;
+      }
+
+      // Valid session active
+      if (session.user?.email) {
+        localStorage.setItem('admin_user', session.user.email);
+        const nameEl = document.getElementById('user-profile-name');
+        if (nameEl) nameEl.textContent = session.user.email.split('@')[0];
+      }
+
+      // Listen for session revocation or sign out
+      window.dbClient.auth.onAuthStateChange((event, newSession) => {
+        if (event === 'SIGNED_OUT' || !newSession) {
+          redirectToLogin();
+        }
+      });
+    } catch (err) {
+      console.warn('Session verification exception:', err);
+      redirectToLogin();
+    }
+  }
+
+  verifySession();
 })();
 
 /* ── SIDEBAR ─────────────────────────────────────────── */

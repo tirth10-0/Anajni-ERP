@@ -43,9 +43,24 @@
     <div class="spinner"></div>
     <div class="status">Loading Anjani ERP...</div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./assets/js/database.js?v=1791185205013"></script>
   <script>
-    const isAuth = localStorage.getItem('admin_logged_in') === 'true';
-    window.location.replace(isAuth ? './pages/dashboard.html' : './login.html');
+    (async function() {
+      localStorage.removeItem('admin_logged_in');
+      try {
+        if (window.dbClient && window.dbClient.auth) {
+          const { data: { session } } = await window.dbClient.auth.getSession();
+          if (session) {
+            window.location.replace('./pages/dashboard.html');
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Auth check error on landing:', e);
+      }
+      window.location.replace('./login.html');
+    })();
   </script>
 </body>
 </html>
