@@ -16,6 +16,12 @@ const Dashboard = () => {
       ing && (ing.name || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
     return nameMatch || ingMatch;
+  }).sort((a, b) => {
+    const idA = parseInt(a.id, 10);
+    const idB = parseInt(b.id, 10);
+    if (!isNaN(idA) && !isNaN(idB) && idA !== idB) return idB - idA;
+    if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+    return (b.batchNo || '').localeCompare(a.batchNo || '', undefined, { numeric: true });
   });
 
   const handleEdit = (id) => {

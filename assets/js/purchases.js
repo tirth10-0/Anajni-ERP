@@ -37,7 +37,7 @@ async function loadPurchases() {
       p.items = allItems.filter(it => it.purchase_id === p.id);
     });
 
-    allPurchases = UTILS.sortByNumericIdDesc(allPurchases, p => p.purchase_no || p.id);
+    allPurchases = UTILS.sortLatestFirst(allPurchases, p => p.purchase_no || p.id);
     renderTable(allPurchases);
     await populateSupplierSelect();
     
@@ -136,7 +136,7 @@ function filterAndRender() {
         itemsText.includes(q);
     });
   }
-  filtered = UTILS.sortByNumericIdDesc(filtered, p => p.purchase_no || p.id);
+  filtered = UTILS.sortLatestFirst(filtered, p => p.purchase_no || p.id);
   renderTable(filtered);
 }
 

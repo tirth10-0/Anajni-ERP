@@ -22,7 +22,7 @@ async function loadSuppliers() {
     console.log('Suppliers: Loading suppliers from backend API...');
     const { data: suppliersData, error } = await window.dbClient.from('suppliers').select('*').order('id', { ascending: false });
     if (error) throw error;
-    allSuppliers = (suppliersData || []).sort((a, b) => (b.id || 0) - (a.id || 0));
+    allSuppliers = UTILS.sortLatestFirst(suppliersData || []);
     
     renderTable(allSuppliers);
     
@@ -77,7 +77,7 @@ function filterAndRender() {
       (s.city || '').toLowerCase().includes(q)
     );
   }
-  filtered = [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
+  filtered = UTILS.sortLatestFirst(filtered);
   renderTable(filtered);
 }
 

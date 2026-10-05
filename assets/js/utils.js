@@ -297,26 +297,100 @@ function extractNumericPart(val) {
   return -1;
 }
 
-function sortByNumericIdDesc(items, getter = (x => x.order_no || x.purchase_no || x.txn_no || x.batch_no || x.ref_no || x.id)) {
-  return [...items].sort((a, b) => {
-    const rawA = getter ? getter(a) : a;
-    const rawB = getter ? getter(b) : b;
-    const numA = extractNumericPart(rawA);
-    const numB = extractNumericPart(rawB);
-
-    if (numA !== -1 && numB !== -1) {
-      if (numB !== numA) return numB - numA;
-    } else if (numB !== -1) {
-      return 1;
-    } else if (numA !== -1) {
-      return -1;
-    }
-
-    // Fallback if numbers are equal or non-numeric
-    return String(rawB || '').localeCompare(String(rawA || ''), undefined, { numeric: true, sensitivity: 'base' });
-  });
+function parseTimestamp(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val.getTime();
+  if (typeof val === 'number' && val > 100000) return val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    const t = Date.parse(trimmed);
+    return isNaN(t) ? null : t;
+  }
+  return null;
 }
 
-window.UTILS = { fmtCurrency, fmtDate, fmtDateInput, todayStr, getTodayDateString, setDefaultDateValue, applyDefaultDateInputs, fmtNumber, fmtPercent, formatPhone, isPhoneFieldName, isGstinFieldName, normalizeTextValue, formatTitleCaseWithPercentRules, formatCategoryLabel, statusBadge, applyMobileTableLabels, renderTableSkeleton, setSkeletonText, renderListSkeleton, getFormData, populateForm, destroyChart, initAllAutocompleteSelects, normalizeUnit, convertUnit, parsePackSizeInMl, sortPackSizesDescending, extractNumericPart, sortByNumericIdDesc, exportToCSV, exportToExcel };
+function sortLatestFirst(items, getter = null) {
+  if (!Array.isArray(items) || items.length <= 1) {
+    return Array.isArray(items) ? [...items] : [];
+  }
+
+  // Preserve initial relative arrival index to reliably reverse natural addition order (A, B, C -> C, B, A)
+  // even if items lack IDs, timestamps, or sequence codes.
+  const indexed = items.map((item, originalIndex) => ({ item, originalIndex }));
+
+  indexed.sort((aObj, bObj) => {
+    const a = aObj.item;
+    const b = bObj.item;
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+
+    // 1. If explicit getter provided, evaluate it first
+    if (typeof getter === 'function') {
+      const valA = getter(a);
+      const valB = getter(b);
+      const numA = extractNumericPart(valA);
+      const numB = extractNumericPart(valB);
+      if (numA !== -1 && numB !== -1 && numA !== numB) {
+        return numB - numA;
+      }
+      const tA = parseTimestamp(valA);
+      const tB = parseTimestamp(valB);
+      if (tA !== null && tB !== null && tA !== tB) {
+        return tB - tA;
+      }
+      if (valA && valB && typeof valA === 'string' && typeof valB === 'string' && valA !== valB) {
+        const cmp = valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+        if (cmp !== 0) return cmp;
+      }
+    }
+
+    // 2. Direct sequence / reference code comparison (order_no, purchase_no, txn_no, batch_no, ref_no, invoice_no)
+    const refA = a.order_no || a.purchase_no || a.txn_no || a.batch_no || a.ref_no || a.invoice_no;
+    const refB = b.order_no || b.purchase_no || b.txn_no || b.batch_no || b.ref_no || b.invoice_no;
+    if (refA || refB) {
+      const numRefA = extractNumericPart(refA);
+      const numRefB = extractNumericPart(refB);
+      if (numRefA !== -1 && numRefB !== -1 && numRefA !== numRefB) {
+        return numRefB - numRefA;
+      }
+    }
+
+    // 3. Numeric ID comparison (id, _id, item_id) -> 10 -> 9 -> 8
+    const idA = extractNumericPart(a.id ?? a._id ?? a.item_id);
+    const idB = extractNumericPart(b.id ?? b._id ?? b.item_id);
+    if (idA !== -1 && idB !== -1 && idA !== idB) {
+      return idB - idA;
+    }
+
+    // 4. Exact created_at / timestamp comparison
+    const timeA = parseTimestamp(a.created_at || a.createdAt || a.timestamp);
+    const timeB = parseTimestamp(b.created_at || b.createdAt || b.timestamp);
+    if (timeA !== null && timeB !== null && timeA !== timeB) {
+      return timeB - timeA;
+    }
+
+    // 5. Business date comparison (date, purchase_date, order_date, txn_date)
+    const dateA = parseTimestamp(a.date || a.purchase_date || a.order_date || a.txn_date);
+    const dateB = parseTimestamp(b.date || b.purchase_date || b.order_date || b.txn_date);
+    if (dateA !== null && dateB !== null && dateA !== dateB) {
+      return dateB - dateA;
+    }
+
+    // 6. Natural addition sequence fallback:
+    // If records A, B, C were added in that order, originalIndex is 0, 1, 2.
+    // Higher originalIndex means added later -> C (2) -> B (1) -> A (0).
+    return bObj.originalIndex - aObj.originalIndex;
+  });
+
+  return indexed.map(obj => obj.item);
+}
+
+function sortByNumericIdDesc(items, getter = null) {
+  return sortLatestFirst(items, getter);
+}
+
+window.UTILS = { fmtCurrency, fmtDate, fmtDateInput, todayStr, getTodayDateString, setDefaultDateValue, applyDefaultDateInputs, fmtNumber, fmtPercent, formatPhone, isPhoneFieldName, isGstinFieldName, normalizeTextValue, formatTitleCaseWithPercentRules, formatCategoryLabel, statusBadge, applyMobileTableLabels, renderTableSkeleton, setSkeletonText, renderListSkeleton, getFormData, populateForm, destroyChart, initAllAutocompleteSelects, normalizeUnit, convertUnit, parsePackSizeInMl, sortPackSizesDescending, extractNumericPart, sortByNumericIdDesc, sortLatestFirst, exportToCSV, exportToExcel };
   
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("../sw.js").then(reg => console.log("SW registered")).catch(err => console.log("SW failed", err)); }); } 

@@ -22,7 +22,7 @@ async function loadClients() {
     console.log('Clients: Loading clients from backend API...');
     const { data: clientsData, error } = await window.dbClient.from('clients').select('*').order('id', { ascending: false });
     if (error) throw error;
-    allClients = (clientsData || []).sort((a, b) => (b.id || 0) - (a.id || 0));
+    allClients = UTILS.sortLatestFirst(clientsData || []);
     
     filterAndRender();
     
@@ -53,7 +53,7 @@ function filterAndRender() {
   if (type) {
     filtered = filtered.filter(c => c.type === type);
   }
-  filtered = [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
+  filtered = UTILS.sortLatestFirst(filtered);
   renderTable(filtered);
 }
 

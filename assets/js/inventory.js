@@ -65,7 +65,7 @@ async function loadInventory() {
       };
     });
 
-    allInventory.sort((a, b) => (b.id || 0) - (a.id || 0));
+    allInventory = UTILS.sortLatestFirst(allInventory);
     renderTable(allInventory);
     updatePageDebug('Ready (' + allInventory.length + ')', '#0C3925');
   } catch (err) {
@@ -182,7 +182,7 @@ function renderTable(data) {
   const tbody = document.querySelector('#inventory-table tbody');
   if (!tbody) return;
   const filtered = filterData(data);
-  filtered.sort((a, b) => (b.id || 0) - (a.id || 0));
+  filtered = UTILS.sortLatestFirst(filtered);
   document.getElementById('total-info').textContent = `${filtered.length} item${filtered.length !== 1 ? 's' : ''}`;
   if (!filtered.length) {
     tbody.innerHTML = `<tr class="empty-row"><td colspan="9"><div class="empty-state"><h3>No items found</h3></div></td></tr>`;

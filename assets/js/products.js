@@ -453,7 +453,7 @@ function getFilteredProducts(data) {
     return haystack.includes(query);
   });
 
-  return list.sort((a, b) => (b.id || 0) - (a.id || 0));
+  return UTILS.sortLatestFirst(list);
 }
 
 function updatePageDebug(text, color) {
@@ -506,7 +506,7 @@ async function loadProducts() {
     ]);
     if (prodRes.error) throw prodRes.error;
     if (packRes.error) throw packRes.error;
-    allProducts = (prodRes.data || []).sort((a, b) => (b.id || 0) - (a.id || 0));
+    allProducts = UTILS.sortLatestFirst(prodRes.data || []);
     allPackagingOptions = packRes.data || [];
 
     syncCatalogUnits();

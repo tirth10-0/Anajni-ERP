@@ -29,7 +29,7 @@ async function loadTransactions() {
       .order('id', { ascending: false });
 
     if (txnErr) throw txnErr;
-    allTransactions = txnData || [];
+    allTransactions = UTILS.sortLatestFirst(txnData || [], t => t.ref_no || t.id);
 
     // Map account name to each transaction and normalize ref_no for display
     allTransactions.forEach(t => {
@@ -252,7 +252,7 @@ function applyFilters() {
   }
 
   // Sort descending by numeric ID / reference
-  filtered = UTILS.sortByNumericIdDesc(filtered, t => t.ref_no || t.id);
+  filtered = UTILS.sortLatestFirst(filtered, t => t.ref_no || t.id);
 
   renderTable(filtered);
   renderSummary(filtered);

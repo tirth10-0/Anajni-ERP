@@ -189,7 +189,7 @@ async function loadDailyTransactions() {
 
     const { data: txnData, error: txnErr } = await window.dbClient.from('daily_transactions').select('*').order('id', { ascending: false });
     if (txnErr) throw txnErr;
-    allDailyTransactions = UTILS.sortByNumericIdDesc(txnData || [], t => t.txn_no || t.id);
+    allDailyTransactions = UTILS.sortLatestFirst(txnData || [], t => t.txn_no || t.id);
 
     ['search-input', 'date-from-filter', 'date-to-filter'].forEach(id => {
       const el = document.getElementById(id);
@@ -290,7 +290,7 @@ function filterTransactions(data) {
 
     return true;
   });
-  return UTILS.sortByNumericIdDesc(list, t => t.txn_no || t.id);
+  return UTILS.sortLatestFirst(list, t => t.txn_no || t.id);
 }
 
 function updateStats(data) {

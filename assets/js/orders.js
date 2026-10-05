@@ -52,7 +52,7 @@ async function loadOrders() {
     
     const { data: ordersData, error: ordersErr } = await window.dbClient.from('orders').select('*').order('id', { ascending: false });
     if (ordersErr) throw ordersErr;
-    allOrders = UTILS.sortByNumericIdDesc(ordersData || [], o => o.order_no || o.id);
+    allOrders = UTILS.sortLatestFirst(ordersData || [], o => o.order_no || o.id);
     
     // Retrieve client list to map display names
     const { data: clientsData, error: clientsErr } = await window.dbClient.from('clients').select('*');
@@ -125,7 +125,7 @@ function applyFiltersAndRender() {
     if (q) {
       data = data.filter(o => `${o.order_no} ${o.client_display} ${o.date}`.toLowerCase().includes(q));
     }
-    data = UTILS.sortByNumericIdDesc(data, o => o.order_no);
+    data = UTILS.sortLatestFirst(data, o => o.order_no || o.id);
     renderTable(data);
   } else {
     const q = (document.getElementById('items-search-input')?.value || '').toLowerCase();
@@ -140,7 +140,7 @@ function applyFiltersAndRender() {
     if (q) {
       data = data.filter(it => `${it.order_no} ${it.client_display} ${it.product_name} ${it.date}`.toLowerCase().includes(q));
     }
-    data = UTILS.sortByNumericIdDesc(data, it => it.order_no);
+    data = UTILS.sortLatestFirst(data, it => it.order_no || it.order_id || it.id);
     renderOrderItemsDetailTable(data);
   }
 }

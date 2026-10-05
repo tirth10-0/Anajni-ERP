@@ -54,7 +54,7 @@ async function loadExpenses() {
     }
     
     if (expRes.error) throw expRes.error;
-    allExpenses = UTILS.sortByNumericIdDesc(expRes.data || [], e => e.id);
+    allExpenses = UTILS.sortLatestFirst(expRes.data || []);
     
     applyFilters();
     renderChart(allExpenses);
@@ -282,7 +282,7 @@ function applyFilters() {
   }
 
   // Sort descending by numeric ID
-  filtered = UTILS.sortByNumericIdDesc(filtered, e => e.id);
+  filtered = UTILS.sortLatestFirst(filtered);
 
   renderTable(filtered);
   renderChart(filtered);

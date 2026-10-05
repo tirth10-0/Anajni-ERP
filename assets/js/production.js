@@ -51,7 +51,7 @@ async function loadData() {
       }));
     }
     
-    allProductions = UTILS.sortByNumericIdDesc(prodBatches || [], b => b.batch_no || b.id);
+    allProductions = UTILS.sortLatestFirst(prodBatches || [], b => b.batch_no || b.id);
     
     populateProductSelect();
     renderTable(allProductions);
@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
       (b.batch_no || '').toLowerCase().includes(term) ||
       (b.product_name || '').toLowerCase().includes(term)
     );
-    renderTable(UTILS.sortByNumericIdDesc(filtered, b => b.batch_no || b.id));
+    renderTable(UTILS.sortLatestFirst(filtered, b => b.batch_no || b.id));
   });
   
   setTimeout(() => loadData(), 100);
