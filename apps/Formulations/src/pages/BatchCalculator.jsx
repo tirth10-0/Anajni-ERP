@@ -292,18 +292,32 @@ const BatchCalculator = () => {
                     display: flex;
                     gap: 12px;
                   }
+                  .show-mobile-text { display: none !important; }
+                  .hide-mobile-text { display: inline !important; }
                   @media (max-width: 768px) {
+                    .show-mobile-text { display: inline !important; }
+                    .hide-mobile-text { display: none !important; }
                     .card {
-                      padding: 12px !important;
+                      padding: 16px 12px !important;
+                    }
+                    .print-table-card {
+                      padding: 14px 8px !important;
                     }
                     .responsive-inputs {
                       grid-template-columns: 1fr !important;
                       gap: 16px !important;
                     }
+                    .line-items-wrap-calc {
+                      width: 100% !important;
+                      overflow-x: hidden !important;
+                    }
                     .line-items-table {
                       display: table !important;
                       width: 100% !important;
-                      min-width: 440px !important;
+                      min-width: 0 !important;
+                      max-width: 100% !important;
+                      table-layout: fixed !important;
+                      border-collapse: collapse !important;
                     }
                     .line-items-table thead {
                       display: table-header-group !important;
@@ -324,32 +338,50 @@ const BatchCalculator = () => {
                     .line-items-table th, 
                     .line-items-table td {
                       display: table-cell !important;
-                      padding: 10px 8px !important;
-                      font-size: 12px !important;
+                      padding: 9px 4px !important;
+                      font-size: 11px !important;
                       border-bottom: 1px solid var(--border) !important;
+                      box-sizing: border-box !important;
+                      vertical-align: middle !important;
                     }
                     .line-items-table th:nth-child(1),
                     .line-items-table td:nth-child(1) {
-                      min-width: 160px !important;
-                      max-width: 220px !important;
-                      word-break: break-word !important;
-                      overflow-wrap: anywhere !important;
+                      width: 44% !important;
+                      min-width: 0 !important;
+                      max-width: none !important;
+                      text-align: left !important;
+                      word-break: normal !important;
+                      overflow-wrap: break-word !important;
                       white-space: normal !important;
+                      hyphens: none !important;
+                      font-size: 11.5px !important;
+                      line-height: 1.35 !important;
+                      padding-left: 6px !important;
                     }
                     .line-items-table th:nth-child(2),
                     .line-items-table td:nth-child(2) {
-                      min-width: 65px !important;
+                      width: 15% !important;
+                      min-width: 0 !important;
+                      text-align: center !important;
                       white-space: nowrap !important;
+                      font-size: 10.5px !important;
                     }
                     .line-items-table th:nth-child(3),
                     .line-items-table td:nth-child(3) {
-                      min-width: 110px !important;
+                      width: 23% !important;
+                      min-width: 0 !important;
+                      text-align: right !important;
                       white-space: nowrap !important;
+                      font-size: 10.5px !important;
                     }
                     .line-items-table th:nth-child(4),
                     .line-items-table td:nth-child(4) {
-                      min-width: 95px !important;
+                      width: 18% !important;
+                      min-width: 0 !important;
+                      text-align: right !important;
                       white-space: nowrap !important;
+                      font-size: 10.5px !important;
+                      padding-right: 6px !important;
                     }
                     .line-items-table td .mobile-label {
                       display: none !important;
@@ -368,6 +400,8 @@ const BatchCalculator = () => {
                       display: inline-flex !important;
                       align-items: center !important;
                       justify-content: center !important;
+                      font-size: 14px !important;
+                      padding: 12px 20px !important;
                     }
                   }
                 `}} />
@@ -425,57 +459,75 @@ const BatchCalculator = () => {
               <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', letterSpacing: '0.08em', marginBottom: '16px', textTransform: 'uppercase' }}>
                 Calculated Ingredient Quantities
               </div>
-              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
-                <table className="line-items-table" style={{ width: '100%', minWidth: '440px' }}>
+              <div className="line-items-wrap-calc" style={{ width: '100%' }}>
+                <table className="line-items-table" style={{ width: '100%' }}>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left', minWidth: '160px', padding: '10px 8px' }}>INGREDIENT NAME</th>
-                      <th style={{ width: '80px', minWidth: '65px', textAlign: 'center', padding: '10px 8px', whiteSpace: 'nowrap' }}>%</th>
-                      <th style={{ width: '130px', minWidth: '110px', textAlign: 'right', padding: '10px 8px', whiteSpace: 'nowrap' }}>REQUIRED QTY</th>
-                      <th style={{ width: '120px', minWidth: '95px', textAlign: 'right', padding: '10px 8px', whiteSpace: 'nowrap' }}>EST. COST</th>
+                      <th style={{ textAlign: 'left' }}>
+                        <span className="hide-mobile-text">INGREDIENT NAME</span>
+                        <span className="show-mobile-text">INGREDIENT</span>
+                      </th>
+                      <th style={{ textAlign: 'center' }}>%</th>
+                      <th style={{ textAlign: 'right' }}>
+                        <span className="hide-mobile-text">REQUIRED QTY</span>
+                        <span className="show-mobile-text">REQ. QTY</span>
+                      </th>
+                      <th style={{ textAlign: 'right' }}>
+                        <span className="hide-mobile-text">EST. COST</span>
+                        <span className="show-mobile-text">EST. COST</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {batchIngredients.map((ingredient, index) => (
-                      <tr key={index}>
-                        <td style={{
-                          color: 'var(--text-primary)',
-                          fontWeight: '600',
-                          minWidth: '160px',
-                          wordBreak: 'break-word',
-                          overflowWrap: 'anywhere',
-                          whiteSpace: 'normal',
-                          padding: '10px 8px'
-                        }}>
-                          <span className="mobile-label">Ingredient Name</span>
-                          {ingredient.name}
-                        </td>
-                        <td style={{ textAlign: 'center', fontFamily: 'monospace', color: 'var(--accent)', fontWeight: '700', padding: '10px 8px', whiteSpace: 'nowrap' }}>
-                          <span className="mobile-label">Percentage (%)</span>
-                          {ingredient.percentage.toFixed(2)}%
-                        </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '700', padding: '10px 8px', whiteSpace: 'nowrap' }}>
-                          <span className="mobile-label">Required Qty</span>
-                          {formatNumber(ingredient.quantity, 4)} {ingredient.unit || batchUnit}
-                        </td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--success)', fontWeight: '700', padding: '10px 8px', whiteSpace: 'nowrap' }}>
-                          <span className="mobile-label">Est. Cost</span>
-                          {formatCurrency(ingredient.quantity * ingredient.costPerUnit)}
-                        </td>
-                      </tr>
-                    ))}
+                    {batchIngredients.map((ingredient, index) => {
+                      const pct = (ingredient.displayPercentage !== undefined && ingredient.displayPercentage > 0)
+                        ? ingredient.displayPercentage
+                        : (ingredient.percentage || 0);
+
+                      const qtyFormatted = (ingredient.quantity % 1 === 0)
+                        ? ingredient.quantity.toFixed(1)
+                        : formatNumber(ingredient.quantity, 2);
+
+                      return (
+                        <tr key={index}>
+                          <td style={{
+                            color: 'var(--text-primary)',
+                            fontWeight: '600',
+                            wordBreak: 'normal',
+                            overflowWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.3'
+                          }}>
+                            <span className="mobile-label">Ingredient Name</span>
+                            {ingredient.name}
+                          </td>
+                          <td style={{ textAlign: 'center', fontFamily: 'monospace', color: 'var(--accent)', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                            <span className="mobile-label">Percentage (%)</span>
+                            {pct.toFixed(2)}%
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                            <span className="mobile-label">Required Qty</span>
+                            {qtyFormatted} {ingredient.unit || batchUnit}
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--success)', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                            <span className="mobile-label">Est. Cost</span>
+                            {formatCurrency(ingredient.quantity * ingredient.costPerUnit)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan="2" style={{ fontWeight: '800', padding: '12px 8px' }}>
+                      <td colSpan="2" style={{ fontWeight: '800' }}>
                         <span className="mobile-label">Total Summary</span>
                         TOTAL BATCH
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '15px', color: 'var(--accent)', padding: '12px 8px', whiteSpace: 'nowrap' }}>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '13.5px', color: 'var(--accent)', whiteSpace: 'nowrap' }}>
                         <span className="mobile-label">Total Batch Yield</span>
-                        {formatNumber(batchSize, 3)} {batchUnit}
+                        {(batchSize % 1 === 0 ? batchSize.toFixed(1) : formatNumber(batchSize, 2))} {batchUnit}
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '15px', color: 'var(--success)', padding: '12px 8px', whiteSpace: 'nowrap' }}>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', fontSize: '13.5px', color: 'var(--success)', whiteSpace: 'nowrap' }}>
                         <span className="mobile-label">Total Est. Cost</span>
                         {formatCurrency(totalBatchCost)}
                       </td>
