@@ -395,8 +395,9 @@
 
     // Bill To formatting
     const toPhoneStr = clientPhone ? (/^phone/i.test(clientPhone) ? clientPhone : `Phone: ${clientPhone.replace(/^Mo\.\s*/i, '')}`) : '';
+    const addrLines = clientAddress ? pdf.splitTextToSize(clientAddress, 71) : [];
     const bToLines = [
-      clientAddress || '',
+      ...addrLines,
       toPhoneStr,
       clientGstin ? `GSTIN: ${clientGstin}` : '',
       isGst ? [clientState ? `State: ${clientState}` : '', clientPos ? `POS: ${clientPos}` : ''].filter(Boolean).join(' | ') : ''
@@ -438,8 +439,8 @@
     });
 
     let tY = textY;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...C_TEXT_MAIN);
+    pdf.setFont('helvetica', 'bold'); // Matches preview font weight (.to-sub { font-weight: 700; color: #000; })
+    pdf.setTextColor(0, 0, 0);
     bToLines.forEach(l => {
       pdf.text(l, rightColX, tY);
       tY += 3.6;
