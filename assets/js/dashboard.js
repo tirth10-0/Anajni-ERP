@@ -160,17 +160,19 @@ async function loadDashboard() {
            return { ...p, stock: batchStock, val: batchStock * cost };
         });
         
+        const techSubtypes = ['insecticide', 'herbicide', 'fungicide', 'pgr', 'solvent', 'technical'];
         const stockAlerts = window.dashboardInventoryData
           .filter(p => {
-             const itemType = String(p.item_subtype || p.category || 'Raw Material').trim();
-             const isTech = itemType.toLowerCase() === 'technical';
+             const rawType = String(p.item_subtype || p.category || 'Raw Material').trim();
+             const isTech = String(p.category || '').toLowerCase() === 'technical' || techSubtypes.includes(rawType.toLowerCase());
              const reorder = parseFloat(p.reorder_level || 0);
              const threshold = reorder > 0 ? reorder : (isTech ? 7 : 50);
              return p.stock <= threshold;
           })
           .map(p => {
-             const itemType = String(p.item_subtype || p.category || 'Raw Material').trim();
-             const isTech = itemType.toLowerCase() === 'technical';
+             const rawType = String(p.item_subtype || p.category || 'Raw Material').trim();
+             const itemType = UTILS.formatCategoryLabel(rawType);
+             const isTech = String(p.category || '').toLowerCase() === 'technical' || techSubtypes.includes(rawType.toLowerCase());
              const reorder = parseFloat(p.reorder_level || 0);
              return { 
                ...p, 
@@ -348,7 +350,7 @@ function renderStockAlerts(alerts) {
       <div class="stock-alert-content" style="display: flex; flex-direction: column; gap: 3px;">
         <div class="stock-alert-name" style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">
           ${p.name || 'Unknown'} 
-          <span class="badge badge-purple" style="font-size: 9.5px; padding: 2px 7px; margin-left: 6px; text-transform: uppercase;">${p.type || 'Raw Material'}</span>
+          <span class="badge badge-purple" style="font-size: 9.5px; padding: 2px 7px; margin-left: 6px;">${UTILS.formatCategoryLabel(p.type) || 'Raw Material'}</span>
         </div>
         <div class="stock-alert-meta" style="font-size: 12px; color: var(--text-muted); font-weight: 500;">
           ${parseFloat(p.stock || 0).toFixed(2)} ${p.unit || ''}

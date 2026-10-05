@@ -59,7 +59,7 @@ function renderLowStockAlerts() {
       const stock = getLocalItemStock(item.id);
       const ro = parseFloat(item.reorder_level) || 0;
       const itemType = String(item.item_subtype || item.category || 'Raw Material').trim();
-      const isTech = itemType.toLowerCase() === 'technical';
+      const isTech = String(item.category || '').toLowerCase() === 'technical' || ['insecticide', 'herbicide', 'fungicide', 'pgr', 'solvent'].includes(itemType.toLowerCase());
       const threshold = ro > 0 ? ro : (isTech ? 7 : 50);
       return stock <= threshold;
     })

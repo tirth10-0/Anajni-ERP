@@ -144,6 +144,100 @@ window.INVENTORY_SERVICE = {
     }
   },
 
+  async resolveTechnicalItem(productId, productName) {
+    let pName = (productName || '').trim();
+    let candidateId = null;
+
+    if (productId) {
+      try {
+        const { data: pRow } = await window.dbClient
+          .from('products')
+          .select('id, name, inventory_item_id')
+          .eq('id', productId)
+          .maybeSingle();
+        if (pRow) {
+          if (!pName) pName = (pRow.name || '').trim();
+          candidateId = pRow.inventory_item_id;
+        }
+      } catch (err) {
+        console.warn('resolveTechnicalItem product lookup error:', err);
+      }
+    }
+
+    // 1. If candidateId exists, check whether that item actually exists in inventory_items
+    if (candidateId) {
+      try {
+        const { data: invRow } = await window.dbClient
+          .from('inventory_items')
+          .select('id, name, unit, category, item_subtype')
+          .eq('id', candidateId)
+          .maybeSingle();
+        if (invRow) return invRow;
+      } catch (err) {
+        console.warn('resolveTechnicalItem candidateId lookup error:', err);
+      }
+    }
+
+    // 2. If candidateId is invalid or missing, search by product name in inventory_items
+    if (pName) {
+      try {
+        const techSubtypes = ['insecticide', 'herbicide', 'fungicide', 'pgr', 'solvent', 'technical'];
+
+        // Direct name match (case-insensitive)
+        const { data: matches } = await window.dbClient
+          .from('inventory_items')
+          .select('id, name, unit, category, item_subtype')
+          .ilike('name', pName);
+
+        if (matches && matches.length > 0) {
+          const techMatch = matches.find(m => {
+            const cat = String(m.category || '').toLowerCase().trim();
+            const sub = String(m.item_subtype || '').toLowerCase().trim();
+            return cat === 'technical' || techSubtypes.includes(sub) || techSubtypes.includes(cat);
+          }) || matches[0];
+
+          if (techMatch && productId) {
+            try {
+              await window.dbClient.from('products').update({ inventory_item_id: techMatch.id }).eq('id', productId);
+            } catch (_) {}
+          }
+          return techMatch;
+        }
+
+        // Fuzzy/fallback name match
+        const { data: allItems } = await window.dbClient
+          .from('inventory_items')
+          .select('id, name, unit, category, item_subtype');
+
+        if (allItems && allItems.length > 0) {
+          const normTarget = pName.toLowerCase().replace(/\s+/g, '');
+          const fuzzyMatches = allItems.filter(it => {
+            const normName = String(it.name || '').toLowerCase().replace(/\s+/g, '');
+            return normName === normTarget || normName.includes(normTarget) || normTarget.includes(normName);
+          });
+          if (fuzzyMatches.length > 0) {
+            const bestMatch = fuzzyMatches.find(m => {
+              const cat = String(m.category || '').toLowerCase().trim();
+              const sub = String(m.item_subtype || '').toLowerCase().trim();
+              return cat === 'technical' || techSubtypes.includes(sub) || techSubtypes.includes(cat);
+            }) || fuzzyMatches[0];
+
+            if (bestMatch && productId) {
+              try {
+                await window.dbClient.from('products').update({ inventory_item_id: bestMatch.id }).eq('id', productId);
+              } catch (_) {}
+            }
+            return bestMatch;
+          }
+        }
+      } catch (err) {
+        console.warn('resolveTechnicalItem name lookup error:', err);
+      }
+    }
+
+    return null;
+  },
+
   async reconcileAllStock() {
     try {
       const { data: items } = await window.dbClient.from('inventory_items').select('id');

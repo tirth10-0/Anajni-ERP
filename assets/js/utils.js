@@ -193,6 +193,20 @@ function normalizeUnit(unitStr) {
   return 'Nos';
 }
 
+function formatCategoryLabel(str) {
+  if (!str) return '';
+  const s = String(str).trim();
+  if (!s) return '';
+  const words = s.replace(/[-_]/g, ' ').split(/\s+/);
+  return words.map(w => {
+    const lower = w.toLowerCase();
+    if (['pgr', 'ec', 'sc', 'wp', 'sl', 'gr', 'sg', 'fs', 'wg'].includes(lower)) {
+      return lower.toUpperCase();
+    }
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }).join(' ');
+}
+
 function convertUnit(qty, fromUnit, toUnit) {
   const q = parseFloat(qty) || 0;
   if (!fromUnit || !toUnit) return q;
@@ -200,11 +214,9 @@ function convertUnit(qty, fromUnit, toUnit) {
   const t = normalizeUnit(toUnit);
   if (f === t) return q;
   
-  if (f === 'Litre' && t === 'Ml') return q * 1000;
-  if (f === 'Ml' && t === 'Litre') return q / 1000;
-  
-  if (f === 'Kg' && t === 'Gram') return q * 1000;
-  if (f === 'Gram' && t === 'Kg') return q / 1000;
+  if ((f === 'Litre' || f === 'Kg') && (t === 'Ml' || t === 'Gram')) return q * 1000;
+  if ((f === 'Ml' || f === 'Gram') && (t === 'Litre' || t === 'Kg')) return q / 1000;
+  if ((f === 'Litre' && t === 'Kg') || (f === 'Kg' && t === 'Litre')) return q;
   
   return q;
 }
@@ -305,6 +317,6 @@ function sortByNumericIdDesc(items, getter = (x => x.order_no || x.purchase_no |
   });
 }
 
-window.UTILS = { fmtCurrency, fmtDate, fmtDateInput, todayStr, getTodayDateString, setDefaultDateValue, applyDefaultDateInputs, fmtNumber, fmtPercent, formatPhone, isPhoneFieldName, isGstinFieldName, normalizeTextValue, formatTitleCaseWithPercentRules, statusBadge, applyMobileTableLabels, renderTableSkeleton, setSkeletonText, renderListSkeleton, getFormData, populateForm, destroyChart, initAllAutocompleteSelects, normalizeUnit, convertUnit, parsePackSizeInMl, sortPackSizesDescending, extractNumericPart, sortByNumericIdDesc, exportToCSV, exportToExcel };
+window.UTILS = { fmtCurrency, fmtDate, fmtDateInput, todayStr, getTodayDateString, setDefaultDateValue, applyDefaultDateInputs, fmtNumber, fmtPercent, formatPhone, isPhoneFieldName, isGstinFieldName, normalizeTextValue, formatTitleCaseWithPercentRules, formatCategoryLabel, statusBadge, applyMobileTableLabels, renderTableSkeleton, setSkeletonText, renderListSkeleton, getFormData, populateForm, destroyChart, initAllAutocompleteSelects, normalizeUnit, convertUnit, parsePackSizeInMl, sortPackSizesDescending, extractNumericPart, sortByNumericIdDesc, exportToCSV, exportToExcel };
   
 if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("../sw.js").then(reg => console.log("SW registered")).catch(err => console.log("SW failed", err)); }); } 

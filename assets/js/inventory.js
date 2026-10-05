@@ -189,8 +189,9 @@ function renderTable(data) {
     return;
   }
   tbody.innerHTML = filtered.map(it => {
-    const itemType = String(it.item_subtype || it.category || 'Raw Material').trim();
-    const isTech = itemType.toLowerCase() === 'technical';
+    const rawType = String(it.item_subtype || it.category || 'Raw Material').trim();
+    const itemType = UTILS.formatCategoryLabel(rawType);
+    const isTech = String(it.category || '').toLowerCase() === 'technical' || ['insecticide', 'herbicide', 'fungicide', 'pgr', 'solvent'].includes(rawType.toLowerCase());
     const threshold = (it.reorder_level > 0) ? it.reorder_level : (isTech ? 7 : 50);
     const isLow = it.total_stock <= threshold;
     const statusBadge = it.total_stock === 0 
@@ -221,6 +222,13 @@ async function deleteInventoryItem(itemType, id) {
   let message = 'Delete this inventory item?';
   APP.showConfirm(message, async () => {
     try {
+      try {
+        await window.dbClient.from('stock_batches').delete().eq('item_id', id).eq('item_type', 'Inventory');
+      } catch (_) {}
+      try {
+        await window.dbClient.from('products').update({ inventory_item_id: null }).eq('inventory_item_id', id);
+      } catch (_) {}
+
       const { error } = await window.dbClient.from('inventory_items').delete().eq('id', id);
       if (error) throw error;
       
@@ -850,7 +858,7 @@ async function saveInventoryItemAPI(payload) {
       category: payload.category || null,
       unit: payload.unit || 'Nos',
       reorder_level: parseFloat(payload.reorder_level || 0),
-      item_subtype: payload.item_subtype || null,
+      item_subtype: payload.item_subtype ? UTILS.formatCategoryLabel(payload.item_subtype) : null,
       item_size: payload.item_size || null,
       description: payload.description || null
     };

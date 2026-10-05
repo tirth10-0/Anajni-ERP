@@ -218,7 +218,7 @@ function renderOrderItemsDetailTable(data) {
       : 'background-color: rgba(12, 57, 37, 0.07);';
 
     const getPackSizeStr = (it) => {
-      let packSizeStr = it.packaging_size;
+      let packSizeStr = it.packaging_size || it.packing_size;
       if (!packSizeStr) {
         const packMatch = allPackagingData.find(p => p.product_id == it.product_id);
         packSizeStr = packMatch ? cleanSizeLabel(packMatch.packaging_size, packMatch.product_unit) : '—';
@@ -287,7 +287,7 @@ async function viewOrder(id) {
     const statusBadge = `<span class="badge ${isCompleted ? 'badge-success' : 'badge-warning'}">${statusVal}</span>`;
 
     let itemsHtml = (o.items || []).map(it => {
-      const pSize = cleanSizeLabel(it.packaging_size || '', '');
+      const pSize = cleanSizeLabel(it.packing_size || it.packaging_size || '', '');
       return `
         <div style="padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
@@ -637,7 +637,12 @@ async function onProductSelectChange(idx, valOrEvt) {
   console.log(`[OrderRow ${idx}] Fetched product object from Product Master:`, p);
   
   it.product_name = p?.name || '';
-  it.inventory_item_id = p?.inventory_item_id || null;
+  if (window.INVENTORY_SERVICE && window.INVENTORY_SERVICE.resolveTechnicalItem) {
+    const techItem = await window.INVENTORY_SERVICE.resolveTechnicalItem(val, p?.name);
+    it.inventory_item_id = techItem?.id || null;
+  } else {
+    it.inventory_item_id = p?.inventory_item_id || null;
+  }
   let pkgOptions = p?.packaging_options || [];
   if (!pkgOptions.length && val) {
     try {
@@ -902,31 +907,15 @@ async function saveOrder() {
       });
 
       // Fetch latest inventory items for auto-matching fallback
-      let invList = [];
-      try {
-        const { data: latestInvItems } = await window.dbClient.from('inventory_items').select('id, name, category');
-        invList = latestInvItems || [];
-      } catch (invErr) {
-        console.warn('Inventory lookup notice:', invErr);
-      }
-
       for (const item of orderItems) {
         const product = cachedProductsList.find(p => p.id == item.product_id);
-        if (!product) continue;
-        
-        if (!product.inventory_item_id) {
-          // Attempt auto-match by name with inventory_items
-          const match = invList.find(inv => 
-            String(inv.name || '').trim().toLowerCase() === String(product.name || '').trim().toLowerCase()
-          );
-          if (match) {
-            product.inventory_item_id = match.id;
-            item.inventory_item_id = match.id;
-            // Silently persist link to products table so it stays linked in database
-            window.dbClient.from('products').update({ inventory_item_id: match.id }).eq('id', product.id).then(() => {});
+        const pName = item.product_name || product?.name || '';
+        if (window.INVENTORY_SERVICE && window.INVENTORY_SERVICE.resolveTechnicalItem) {
+          const techItem = await window.INVENTORY_SERVICE.resolveTechnicalItem(item.product_id, pName);
+          if (techItem) {
+            item.inventory_item_id = techItem.id;
+            if (product) product.inventory_item_id = techItem.id;
           }
-        } else if (product.inventory_item_id) {
-          item.inventory_item_id = product.inventory_item_id;
         }
       }
 
@@ -1024,26 +1013,22 @@ async function revertOrderStock(orderId) {
       }
 
       // 2. Restore technical stock
-      let techId = it.inventory_item_id;
-      if (!techId && it.product_id) {
-        const { data: pRow } = await window.dbClient.from('products').select('inventory_item_id, name').eq('id', it.product_id).single();
-        if (pRow && pRow.inventory_item_id) techId = pRow.inventory_item_id;
+      let techItem = null;
+      if (window.INVENTORY_SERVICE && window.INVENTORY_SERVICE.resolveTechnicalItem) {
+        techItem = await window.INVENTORY_SERVICE.resolveTechnicalItem(it.product_id, it.product_name);
       }
-      if (!techId) {
-        const pName = it.product_name || '';
-        const { data: matchedItems } = await window.dbClient.from('inventory_items').select('id, unit, category').ilike('name', pName.trim());
-        const techMatch = matchedItems?.find(m => String(m.category).toLowerCase().trim() === 'technical') || matchedItems?.[0];
-        if (techMatch) techId = techMatch.id;
+      if (!techItem && it.inventory_item_id) {
+        const { data: invRow } = await window.dbClient.from('inventory_items').select('id, unit').eq('id', it.inventory_item_id).maybeSingle();
+        techItem = invRow;
       }
 
-      if (techId) {
-        const { data: techItem } = await window.dbClient.from('inventory_items').select('id, unit').eq('id', techId).single();
+      if (techItem) {
         let restoreQty = volumeLiters;
-        if (techItem && techItem.unit) {
+        if (techItem.unit) {
           restoreQty = UTILS.convertUnit(volumeLiters, 'Litre', techItem.unit);
         }
         if (restoreQty > 0) {
-          await window.INVENTORY_SERVICE.restoreStock(techId, restoreQty);
+          await window.INVENTORY_SERVICE.restoreStock(techItem.id, restoreQty);
         }
       }
     }
@@ -1060,14 +1045,14 @@ async function revertOrderStock(orderId) {
 async function insertOrderItemsAndSyncStock(orderId, items, orderNo) {
   for (const it of items) {
     const qty = parseFloat(it.quantity) || 0;
-    const packMl = UTILS.parsePackSizeInMl(it.packaging_size) || 1000;
+    const packMl = UTILS.parsePackSizeInMl(it.packaging_size || it.packing_size) || 1000;
     const volumeLiters = (packMl / 1000) * qty;
 
     const itemRow = {
       order_id: orderId,
       product_id: it.product_id ? parseInt(it.product_id, 10) : null,
       product_name: it.product_name,
-      packing_size: it.packaging_size || null,
+      packing_size: it.packaging_size || it.packing_size || null,
       bottle_inventory_id: it.bottle_inventory_id ? parseInt(it.bottle_inventory_id, 10) : null,
       quantity: qty,
       unit_price: parseFloat(it.unit_price) || 0,
@@ -1083,26 +1068,22 @@ async function insertOrderItemsAndSyncStock(orderId, items, orderNo) {
     }
 
     // 2. Deduct Technical stock
-    let techId = it.inventory_item_id;
-    if (!techId && it.product_id) {
-      const { data: pRow } = await window.dbClient.from('products').select('inventory_item_id, name').eq('id', it.product_id).single();
-      if (pRow && pRow.inventory_item_id) techId = pRow.inventory_item_id;
+    let techItem = null;
+    if (window.INVENTORY_SERVICE && window.INVENTORY_SERVICE.resolveTechnicalItem) {
+      techItem = await window.INVENTORY_SERVICE.resolveTechnicalItem(it.product_id, it.product_name);
     }
-    if (!techId) {
-      const pName = it.product_name || '';
-      const { data: matchedItems } = await window.dbClient.from('inventory_items').select('id, unit, category').ilike('name', pName.trim());
-      const techMatch = matchedItems?.find(m => String(m.category).toLowerCase().trim() === 'technical') || matchedItems?.[0];
-      if (techMatch) techId = techMatch.id;
+    if (!techItem && it.inventory_item_id) {
+      const { data: invRow } = await window.dbClient.from('inventory_items').select('id, unit').eq('id', it.inventory_item_id).maybeSingle();
+      techItem = invRow;
     }
 
-    if (techId) {
-      const { data: techItem } = await window.dbClient.from('inventory_items').select('id, unit').eq('id', techId).single();
+    if (techItem) {
       let deductQty = volumeLiters;
-      if (techItem && techItem.unit) {
+      if (techItem.unit) {
         deductQty = UTILS.convertUnit(volumeLiters, 'Litre', techItem.unit);
       }
       if (deductQty > 0) {
-        await window.INVENTORY_SERVICE.deductStock(techId, deductQty);
+        await window.INVENTORY_SERVICE.deductStock(techItem.id, deductQty);
       }
     }
   }

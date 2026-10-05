@@ -1,4 +1,4 @@
-﻿/* products.js - Enhanced with Packaging Management & Units */
+/* products.js - Enhanced with Packaging Management & Units */
 let allProducts = [], allPackagingOptions = [], editingProductId = null;
 let currentPackagingOptions = [];
 let technicalInventoryNames = [];
@@ -543,7 +543,7 @@ function renderProductsTable(data) {
       <td class="cell-bold">${p.name}</td>
       <td class="cell-mono">${p.batch_no || '—'}</td>
       <td>${p.brand || '—'}</td>
-      <td><span class="badge badge-purple">${p.category || '—'}</span></td>
+      <td><span class="badge badge-purple">${UTILS.formatCategoryLabel(p.category) || '—'}</span></td>
       <td>${toxBadge}</td>
       <td>${UTILS.fmtCurrency(p.purchase_price || 0)}</td>
       <td>${UTILS.fmtCurrency(p.sell_price || 0)}</td>
