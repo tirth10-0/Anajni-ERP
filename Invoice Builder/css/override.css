@@ -452,230 +452,244 @@ select.sb-input:focus {
   vertical-align: middle !important;
 }
 
-/* ── ERP-Identical Mobile Bottom Floating Dock ───────────────────────── */
+/* ── Desktop & Larger Screens: Strict Mobile Dock Hiding ─────────────── */
 #mobile-tabs {
-  position: fixed !important;
-  bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-  left: 14px !important;
-  right: 14px !important;
-  height: 62px !important;
-  box-sizing: border-box !important;
-  background: rgba(255, 255, 255, 0.96) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(2, 6, 24, 0.12) !important;
-  border-radius: 20px !important;
-  z-index: 9999 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-around !important;
-  padding: 6px 8px !important;
-  box-shadow: 0 8px 24px rgba(2, 6, 24, 0.12), 0 2px 6px rgba(2, 6, 24, 0.04) !important;
-}
-
-[data-theme="dark"] #mobile-tabs {
-  background: rgba(15, 23, 42, 0.94) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
-}
-
-.mob-tab,
-#mobile-tabs .mob-tab,
-#mobile-tabs a.mob-tab,
-#mobile-tabs a.mob-tab:link,
-#mobile-tabs a.mob-tab:visited,
-#mobile-tabs button.mob-tab,
-#mobile-tabs .mob-nav-tab,
-#mobile-tabs .mob-action-tab,
-#mobile-tabs .mob-tab-pdf {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 3px !important;
-  cursor: pointer !important;
-  background: transparent !important;
-  border: none !important;
-  color: #475569 !important;
-  font-size: 8.5px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0 !important;
-  line-height: 1.1 !important;
-  white-space: nowrap !important;
-  font-family: 'Inter', sans-serif !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  padding: 6px 2px !important;
-  border-radius: 14px !important;
-  box-sizing: border-box !important;
-  -webkit-tap-highlight-color: transparent !important;
-  text-decoration: none !important;
-  fill: #475569 !important;
-}
-
-#mobile-tabs .mob-tab .material-symbols-outlined,
-#mobile-tabs a.mob-tab .material-symbols-outlined,
-#mobile-tabs button.mob-tab .material-symbols-outlined,
-#mobile-tabs .mob-nav-tab .material-symbols-outlined,
-#mobile-tabs .mob-action-tab .material-symbols-outlined,
-#mobile-tabs .mob-tab-pdf .material-symbols-outlined {
-  font-size: 18px !important;
-  width: 18px !important;
-  height: 18px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  line-height: 1 !important;
-  color: #475569 !important;
-  stroke: currentColor !important;
-}
-
-[data-theme="dark"] .mob-tab,
-[data-theme="dark"] #mobile-tabs .mob-tab,
-[data-theme="dark"] #mobile-tabs a.mob-tab,
-[data-theme="dark"] #mobile-tabs a.mob-tab:link,
-[data-theme="dark"] #mobile-tabs a.mob-tab:visited,
-[data-theme="dark"] #mobile-tabs button.mob-tab,
-[data-theme="dark"] #mobile-tabs .mob-nav-tab,
-[data-theme="dark"] #mobile-tabs .mob-action-tab,
-[data-theme="dark"] #mobile-tabs .mob-tab-pdf {
-  color: #94a3b8 !important;
-  fill: #94a3b8 !important;
-}
-
-[data-theme="dark"] #mobile-tabs .mob-tab .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs a.mob-tab .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs button.mob-tab .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs .mob-nav-tab .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs .mob-action-tab .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs .mob-tab-pdf .material-symbols-outlined {
-  color: #94a3b8 !important;
-}
-
-#mobile-tabs .mob-tab:hover,
-#mobile-tabs a.mob-tab:hover,
-#mobile-tabs button.mob-tab:hover,
-#mobile-tabs .mob-nav-tab:hover,
-#mobile-tabs .mob-action-tab:hover,
-#mobile-tabs .mob-tab:hover .material-symbols-outlined,
-#mobile-tabs a.mob-tab:hover .material-symbols-outlined,
-#mobile-tabs button.mob-tab:hover .material-symbols-outlined {
-  color: #0C3925 !important;
-}
-
-[data-theme="dark"] #mobile-tabs .mob-tab:hover,
-[data-theme="dark"] #mobile-tabs a.mob-tab:hover,
-[data-theme="dark"] #mobile-tabs button.mob-tab:hover,
-[data-theme="dark"] #mobile-tabs .mob-nav-tab:hover,
-[data-theme="dark"] #mobile-tabs .mob-action-tab:hover,
-[data-theme="dark"] #mobile-tabs .mob-tab:hover .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs a.mob-tab:hover .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs button.mob-tab:hover .material-symbols-outlined {
-  color: #34d399 !important;
-}
-
-#mobile-tabs .mob-tab.active,
-#mobile-tabs a.mob-tab.active,
-#mobile-tabs a.mob-tab.active:link,
-#mobile-tabs a.mob-tab.active:visited,
-#mobile-tabs button.mob-tab.active,
-#mobile-tabs .mob-nav-tab.active,
-#mobile-tabs .mob-action-tab.active {
-  background: #0C3925 !important;
-  color: #ffffff !important;
-  border-radius: 12px !important;
-  padding: 6px 4px !important;
-  margin: 0 !important;
-  box-shadow: 0 2px 8px rgba(12, 57, 37, 0.25) !important;
-}
-
-#mobile-tabs .mob-tab.active .material-symbols-outlined,
-#mobile-tabs a.mob-tab.active .material-symbols-outlined,
-#mobile-tabs button.mob-tab.active .material-symbols-outlined,
-#mobile-tabs .mob-nav-tab.active .material-symbols-outlined,
-#mobile-tabs .mob-action-tab.active .material-symbols-outlined {
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] #mobile-tabs .mob-tab.active,
-[data-theme="dark"] #mobile-tabs a.mob-tab.active,
-[data-theme="dark"] #mobile-tabs a.mob-tab.active:link,
-[data-theme="dark"] #mobile-tabs a.mob-tab.active:visited,
-[data-theme="dark"] #mobile-tabs button.mob-tab.active,
-[data-theme="dark"] #mobile-tabs .mob-nav-tab.active,
-[data-theme="dark"] #mobile-tabs .mob-action-tab.active {
-  background: #10b981 !important;
-  color: #020618 !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
-}
-
-[data-theme="dark"] #mobile-tabs .mob-tab.active .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs a.mob-tab.active .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs button.mob-tab.active .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs .mob-nav-tab.active .material-symbols-outlined,
-[data-theme="dark"] #mobile-tabs .mob-action-tab.active .material-symbols-outlined {
-  color: #020618 !important;
-}
-
-.mob-tab-pdf {
-  background: none !important;
-  color: #475569 !important;
-}
-
-.mob-tab-pdf:hover {
-  color: #0C3925 !important;
-}
-
-.mob-tab-pdf:active {
-  background: transparent !important;
-}
-
-.mob-nav-tab::after,
-.mob-nav-tab.active::after {
   display: none !important;
-  content: none !important;
 }
 
-.mob-tab-label {
-  font-size: 8.5px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0 !important;
-  line-height: 1.1 !important;
-  white-space: nowrap !important;
-  text-align: center !important;
-  color: #475569 !important;
-  transition: color 0.2s !important;
+@media (min-width: 769px) {
+  #mobile-tabs {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
-[data-theme="dark"] .mob-tab-label {
-  color: #94a3b8 !important;
+/* ── Mobile Only (<= 768px): ERP-Identical Mobile Bottom Floating Dock ─ */
+@media (max-width: 768px) {
+  #mobile-tabs {
+    position: fixed !important;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 14px !important;
+    right: 14px !important;
+    height: 62px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(2, 6, 24, 0.12) !important;
+    border-radius: 20px !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    padding: 6px 8px !important;
+    box-shadow: 0 8px 24px rgba(2, 6, 24, 0.12), 0 2px 6px rgba(2, 6, 24, 0.04) !important;
+  }
+  
+  [data-theme="dark"] #mobile-tabs {
+    background: rgba(15, 23, 42, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+  }
+  
+  .mob-tab,
+  #mobile-tabs .mob-tab,
+  #mobile-tabs a.mob-tab,
+  #mobile-tabs a.mob-tab:link,
+  #mobile-tabs a.mob-tab:visited,
+  #mobile-tabs button.mob-tab,
+  #mobile-tabs .mob-nav-tab,
+  #mobile-tabs .mob-action-tab,
+  #mobile-tabs .mob-tab-pdf {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    cursor: pointer !important;
+    background: transparent !important;
+    border: none !important;
+    color: #475569 !important;
+    font-size: 8.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    font-family: 'Inter', sans-serif !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 6px 2px !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    -webkit-tap-highlight-color: transparent !important;
+    text-decoration: none !important;
+    fill: #475569 !important;
+  }
+  
+  #mobile-tabs .mob-tab .material-symbols-outlined,
+  #mobile-tabs a.mob-tab .material-symbols-outlined,
+  #mobile-tabs button.mob-tab .material-symbols-outlined,
+  #mobile-tabs .mob-nav-tab .material-symbols-outlined,
+  #mobile-tabs .mob-action-tab .material-symbols-outlined,
+  #mobile-tabs .mob-tab-pdf .material-symbols-outlined {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    color: #475569 !important;
+    stroke: currentColor !important;
+  }
+  
+  [data-theme="dark"] .mob-tab,
+  [data-theme="dark"] #mobile-tabs .mob-tab,
+  [data-theme="dark"] #mobile-tabs a.mob-tab,
+  [data-theme="dark"] #mobile-tabs a.mob-tab:link,
+  [data-theme="dark"] #mobile-tabs a.mob-tab:visited,
+  [data-theme="dark"] #mobile-tabs button.mob-tab,
+  [data-theme="dark"] #mobile-tabs .mob-nav-tab,
+  [data-theme="dark"] #mobile-tabs .mob-action-tab,
+  [data-theme="dark"] #mobile-tabs .mob-tab-pdf {
+    color: #94a3b8 !important;
+    fill: #94a3b8 !important;
+  }
+  
+  [data-theme="dark"] #mobile-tabs .mob-tab .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs a.mob-tab .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs button.mob-tab .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs .mob-nav-tab .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs .mob-action-tab .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs .mob-tab-pdf .material-symbols-outlined {
+    color: #94a3b8 !important;
+  }
+  
+  #mobile-tabs .mob-tab:hover,
+  #mobile-tabs a.mob-tab:hover,
+  #mobile-tabs button.mob-tab:hover,
+  #mobile-tabs .mob-nav-tab:hover,
+  #mobile-tabs .mob-action-tab:hover,
+  #mobile-tabs .mob-tab:hover .material-symbols-outlined,
+  #mobile-tabs a.mob-tab:hover .material-symbols-outlined,
+  #mobile-tabs button.mob-tab:hover .material-symbols-outlined {
+    color: #0C3925 !important;
+  }
+  
+  [data-theme="dark"] #mobile-tabs .mob-tab:hover,
+  [data-theme="dark"] #mobile-tabs a.mob-tab:hover,
+  [data-theme="dark"] #mobile-tabs button.mob-tab:hover,
+  [data-theme="dark"] #mobile-tabs .mob-nav-tab:hover,
+  [data-theme="dark"] #mobile-tabs .mob-action-tab:hover,
+  [data-theme="dark"] #mobile-tabs .mob-tab:hover .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs a.mob-tab:hover .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs button.mob-tab:hover .material-symbols-outlined {
+    color: #34d399 !important;
+  }
+  
+  #mobile-tabs .mob-tab.active,
+  #mobile-tabs a.mob-tab.active,
+  #mobile-tabs a.mob-tab.active:link,
+  #mobile-tabs a.mob-tab.active:visited,
+  #mobile-tabs button.mob-tab.active,
+  #mobile-tabs .mob-nav-tab.active,
+  #mobile-tabs .mob-action-tab.active {
+    background: #0C3925 !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 6px 4px !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 8px rgba(12, 57, 37, 0.25) !important;
+  }
+  
+  #mobile-tabs .mob-tab.active .material-symbols-outlined,
+  #mobile-tabs a.mob-tab.active .material-symbols-outlined,
+  #mobile-tabs button.mob-tab.active .material-symbols-outlined,
+  #mobile-tabs .mob-nav-tab.active .material-symbols-outlined,
+  #mobile-tabs .mob-action-tab.active .material-symbols-outlined {
+    color: #ffffff !important;
+  }
+  
+  [data-theme="dark"] #mobile-tabs .mob-tab.active,
+  [data-theme="dark"] #mobile-tabs a.mob-tab.active,
+  [data-theme="dark"] #mobile-tabs a.mob-tab.active:link,
+  [data-theme="dark"] #mobile-tabs a.mob-tab.active:visited,
+  [data-theme="dark"] #mobile-tabs button.mob-tab.active,
+  [data-theme="dark"] #mobile-tabs .mob-nav-tab.active,
+  [data-theme="dark"] #mobile-tabs .mob-action-tab.active {
+    background: #10b981 !important;
+    color: #020618 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+  }
+  
+  [data-theme="dark"] #mobile-tabs .mob-tab.active .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs a.mob-tab.active .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs button.mob-tab.active .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs .mob-nav-tab.active .material-symbols-outlined,
+  [data-theme="dark"] #mobile-tabs .mob-action-tab.active .material-symbols-outlined {
+    color: #020618 !important;
+  }
+  
+  .mob-tab-pdf {
+    background: none !important;
+    color: #475569 !important;
+  }
+  
+  .mob-tab-pdf:hover {
+    color: #0C3925 !important;
+  }
+  
+  .mob-tab-pdf:active {
+    background: transparent !important;
+  }
+  
+  .mob-nav-tab::after,
+  .mob-nav-tab.active::after {
+    display: none !important;
+    content: none !important;
+  }
+  
+  .mob-tab-label {
+    font-size: 8.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    color: #475569 !important;
+    transition: color 0.2s !important;
+  }
+  
+  [data-theme="dark"] .mob-tab-label {
+    color: #94a3b8 !important;
+  }
+  
+  .mob-tab:hover .mob-tab-label,
+  a.mob-tab:hover .mob-tab-label,
+  button.mob-tab:hover .mob-tab-label {
+    color: #0C3925 !important;
+  }
+  
+  [data-theme="dark"] .mob-tab:hover .mob-tab-label,
+  [data-theme="dark"] a.mob-tab:hover .mob-tab-label,
+  [data-theme="dark"] button.mob-tab:hover .mob-tab-label {
+    color: #34d399 !important;
+  }
+  
+  .mob-tab.active .mob-tab-label,
+  a.mob-tab.active .mob-tab-label,
+  button.mob-tab.active .mob-tab-label {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+  }
+  
+  [data-theme="dark"] .mob-tab.active .mob-tab-label,
+  [data-theme="dark"] a.mob-tab.active .mob-tab-label,
+  [data-theme="dark"] button.mob-tab.active .mob-tab-label {
+    color: #020618 !important;
+  }
 }
-
-.mob-tab:hover .mob-tab-label,
-a.mob-tab:hover .mob-tab-label,
-button.mob-tab:hover .mob-tab-label {
-  color: #0C3925 !important;
-}
-
-[data-theme="dark"] .mob-tab:hover .mob-tab-label,
-[data-theme="dark"] a.mob-tab:hover .mob-tab-label,
-[data-theme="dark"] button.mob-tab:hover .mob-tab-label {
-  color: #34d399 !important;
-}
-
-.mob-tab.active .mob-tab-label,
-a.mob-tab.active .mob-tab-label,
-button.mob-tab.active .mob-tab-label {
-  color: #ffffff !important;
-  font-weight: 800 !important;
-}
-
-[data-theme="dark"] .mob-tab.active .mob-tab-label,
-[data-theme="dark"] a.mob-tab.active .mob-tab-label,
-[data-theme="dark"] button.mob-tab.active .mob-tab-label {
-  color: #020618 !important;
-}
-

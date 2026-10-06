@@ -1868,6 +1868,10 @@ button.mob-tab.active .material-symbols-outlined {
 
 /* ─── RESPONSIVE ─────────────────────────────────── */
 @media (min-width: 769px) {
+  #mobile-tabs {
+    display: none !important;
+  }
+
   /* Desktop: sidebar always visible */
   #sidebar {
     display: block !important;
