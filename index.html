@@ -41,9 +41,19 @@
     <div class="status">Loading Anjani ERP...</div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./assets/js/database.js?v=1791269096312"></script>
+  <script src="./assets/js/database.js?v=1791269640209"></script>
   <script>
     (async function() {
+      // Fix for GitHub Pages repo subpath resolution:
+      // When opening https://user.github.io/repo without a trailing slash,
+      // resolving './pages/dashboard.html' strips the repo name and produces
+      // https://user.github.io/pages/dashboard.html (404 Error).
+      const path = window.location.pathname;
+      if (!path.endsWith('/') && !path.endsWith('.html')) {
+        window.location.replace(window.location.origin + path + '/' + window.location.search + window.location.hash);
+        return;
+      }
+
       localStorage.removeItem('admin_logged_in');
       try {
         if (window.dbClient && window.dbClient.auth) {
