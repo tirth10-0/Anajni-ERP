@@ -452,3 +452,121 @@ select.sb-input:focus {
   vertical-align: middle !important;
 }
 
+/* ── ERP-Identical Mobile Bottom Floating Dock ───────────────────────── */
+#mobile-tabs {
+  position: fixed !important;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 14px !important;
+  right: 14px !important;
+  height: 62px !important;
+  box-sizing: border-box !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(2, 6, 24, 0.12) !important;
+  border-radius: 20px !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+  padding: 6px 8px !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 24, 0.12), 0 2px 6px rgba(2, 6, 24, 0.04) !important;
+}
+
+[data-theme="dark"] #mobile-tabs {
+  background: rgba(15, 23, 42, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+.mob-tab {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  color: #475569 !important;
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  font-family: 'Inter', sans-serif !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding: 6px 2px !important;
+  border-radius: 14px !important;
+  box-sizing: border-box !important;
+  -webkit-tap-highlight-color: transparent !important;
+  text-decoration: none !important;
+}
+
+[data-theme="dark"] .mob-tab {
+  color: #94a3b8 !important;
+}
+
+.mob-tab .material-symbols-outlined {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  color: inherit !important;
+}
+
+.mob-tab:hover {
+  color: #0C3925 !important;
+}
+
+[data-theme="dark"] .mob-tab:hover {
+  color: #34d399 !important;
+}
+
+.mob-tab.active {
+  background: #0C3925 !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  padding: 6px 4px !important;
+  margin: 0 !important;
+  box-shadow: 0 2px 8px rgba(12, 57, 37, 0.25) !important;
+}
+
+.mob-tab.active .material-symbols-outlined {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .mob-tab.active {
+  background: #10b981 !important;
+  color: #020618 !important;
+}
+
+[data-theme="dark"] .mob-tab.active .material-symbols-outlined {
+  color: #020618 !important;
+}
+
+.mob-tab-pdf {
+  background: none !important;
+  color: #475569 !important;
+}
+
+.mob-tab-pdf:hover {
+  color: #0C3925 !important;
+}
+
+.mob-tab-pdf:active {
+  background: transparent !important;
+}
+
+.mob-nav-tab::after,
+.mob-nav-tab.active::after {
+  display: none !important;
+  content: none !important;
+}
+

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 
 <head>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -18,11 +18,11 @@
   <!-- App Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../assets/js/database.js"></script>
-  <script src="js/api.js?v=1791261353966"></script>
-  <script src="js/storage.js?v=1791261353966"></script>
+  <script src="js/api.js?v=1791265146777"></script>
+  <script src="js/storage.js?v=1791265146777"></script>
   <!-- Styles -->
-  <link rel="stylesheet" href="css/main.css?v=1791261353966" />
-  <link rel="stylesheet" href="css/override.css?v=1791261353966" />
+  <link rel="stylesheet" href="css/main.css?v=1791265146777" />
+  <link rel="stylesheet" href="css/override.css?v=1791265146777" />
   <style>
     :root {
       --glass-bg: rgba(255, 255, 255, 0.03);
@@ -155,25 +155,23 @@
       font-size: 13.5px;
     }
 
-    /* ── ERP-style structural secondary thead ── */
-    .data-table thead,
-    [data-theme="dark"] .data-table thead {
-      background: #020618;
+    /* ── ERP-style thead ── */
+    .data-table thead {
+      background: #f1f5f9;
       position: sticky;
       top: 0;
       z-index: 1;
     }
 
     .data-table th {
-      color: #ffffff !important;
-      padding: 13px 18px;
+      color: #1e293b !important;
+      padding: 14px 18px;
       text-align: left;
-      font-size: 10.5px;
+      font-size: 11.5px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 2px solid #cbd5e1;
       vertical-align: middle;
       white-space: nowrap;
     }
@@ -693,16 +691,13 @@
     <a class="mob-tab mob-nav-tab" href="history.html">
       <span class="material-symbols-outlined">history</span> History
     </a>
-    <a class="mob-tab mob-nav-tab active" href="master.html">
-      <span class="material-symbols-outlined">database</span> Master
-    </a>
   </div>
 
   <!-- MAIN SCRIPT -->
-  <script src="js/master.js?v=1791261353966"></script>
+  <script src="js/master.js?v=1791265146777"></script>
   <script>
     try {
-      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
     } catch (e) {}
     // Force GSTIN to uppercase
     document.addEventListener('DOMContentLoaded', () => {

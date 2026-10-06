@@ -524,13 +524,18 @@ function _validateInvoicePayload(data) {
 }
 
 // ─── SHARED UI HELPERS (Theme & Profile) ──────────────────────────────────────
-function applyTheme(theme = 'dark') {
-  document.documentElement.setAttribute('data-theme', 'dark');
-  safeStorage.setItem('theme', 'dark');
+function applyTheme(theme = 'light') {
+  const current = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', current);
+  safeStorage.setItem('theme', current);
 }
 
 function toggleTheme() {
-  applyTheme('dark');
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  safeStorage.setItem('theme', next);
+  localStorage.setItem('theme', next);
 }
 
 function showProfileSymbol() {
@@ -550,7 +555,7 @@ function showProfileSymbol() {
 
 // Global initialization for all pages
 window.addEventListener('DOMContentLoaded', () => {
-  applyTheme('dark');
+  applyTheme(localStorage.getItem('theme') || 'light');
   showProfileSymbol();
 
   // ─── GLOBAL TEXT FORMATTING ───────────────────────────────────────────────

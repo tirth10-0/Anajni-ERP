@@ -1198,21 +1198,10 @@
             position: relative
         }
 
-        .mob-nav-tab::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 20%;
-            right: 20%;
-            height: 3px;
-            background: #0C3925;
-            border-radius: 0 0 4px 4px;
-            transform: scaleX(0);
-            transition: transform 0.2s ease
-        }
-
+        .mob-nav-tab::after,
         .mob-nav-tab.active::after {
-            transform: scaleX(1)
+            display: none !important;
+            content: none !important;
         }
 
         /* Divider between nav and action sections */

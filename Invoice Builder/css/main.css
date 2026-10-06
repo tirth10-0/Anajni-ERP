@@ -1534,14 +1534,15 @@ td .row-total {
   background: rgba(12, 57, 37, 0.08);
 }
 
-/* ─── MOBILE BOTTOM TAB BAR (ERP Rounded Dock) ─────────────────────────── */
+/* ─── MOBILE BOTTOM TAB BAR (Exact ERP Floating Rounded Dock) ─────────────────────────── */
 #mobile-tabs {
   display: none;
   position: fixed;
   bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   left: 14px;
   right: 14px;
-  height: 62px;
+  height: 62px !important;
+  box-sizing: border-box !important;
   background: rgba(255, 255, 255, 0.96) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1550,8 +1551,8 @@ td .row-total {
   z-index: 9999;
   align-items: center;
   justify-content: space-around;
-  padding: 4px 6px;
-  box-shadow: 0 8px 24px rgba(2, 6, 24, 0.12), 0 2px 6px rgba(2, 6, 24, 0.04);
+  padding: 6px 8px !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 24, 0.12), 0 2px 6px rgba(2, 6, 24, 0.04) !important;
 }
 
 [data-theme="dark"] #mobile-tabs {
@@ -1571,34 +1572,43 @@ td .row-total {
   cursor: pointer;
   background: transparent;
   border: none;
-  color: #475569;
+  color: #475569 !important;
   font-size: 8.5px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
   font-family: "Inter", sans-serif;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 6px 2px;
-  border-radius: 12px;
+  padding: 6px 2px !important;
+  border-radius: 14px !important;
+  box-sizing: border-box !important;
   -webkit-tap-highlight-color: transparent;
   text-decoration: none !important;
 }
 
 [data-theme="dark"] .mob-tab {
-  color: #94a3b8;
+  color: #94a3b8 !important;
 }
 
 .mob-tab .material-symbols-outlined {
-  font-size: 20px;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+  color: inherit !important;
 }
 
 .mob-tab:hover {
-  color: #0C3925;
+  color: #0C3925 !important;
 }
 
 [data-theme="dark"] .mob-tab:hover {
-  color: #34d399;
+  color: #34d399 !important;
 }
 
 .mob-tab.active {
@@ -1625,24 +1635,22 @@ td .row-total {
 
 .mob-tab-pdf {
   background: none;
-  color: inherit;
+  color: #475569 !important;
 }
 
 .mob-tab-pdf:hover {
-  color: #34d399;
+  color: #0C3925 !important;
 }
 
 .mob-tab-pdf:active {
   background: transparent;
 }
 
-/* Nav tabs — solid active indicator bar on top */
-.mob-nav-tab {
-  position: relative;
-}
-
-.mob-nav-tab::after {
-  content: "";
+/* Ensure no legacy indicator bars protrude on active tab */
+.mob-nav-tab::after,
+.mob-nav-tab.active::after {
+  display: none !important;
+  content: none !important;
 }
 
 .qr-label {
@@ -1776,26 +1784,14 @@ td .row-total {
 
 /* (Mobile bottom tab styles defined above) */
 
-/* Nav tabs — solid active indicator bar on top */
+/* Nav tabs — flush pill indicator inside dock */
 .mob-nav-tab {
   position: relative;
 }
-
-.mob-nav-tab::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 20%;
-  right: 20%;
-  height: 3px;
-  background: var(--primary);
-  border-radius: 0 0 4px 4px;
-  transform: scaleX(0);
-  transition: transform 0.2s ease;
-}
-
+.mob-nav-tab::after,
 .mob-nav-tab.active::after {
-  transform: scaleX(1);
+  display: none !important;
+  content: none !important;
 }
 
 /* Divider between nav and action sections */
@@ -2018,13 +2014,13 @@ td .row-total {
   }
 
   #mobile-tabs {
-    height: 52px;
+    height: 62px !important;
   }
   .mob-tab {
-    font-size: 8px;
+    font-size: 8px !important;
   }
   .mob-tab .material-symbols-outlined {
-    font-size: 20px;
+    font-size: 18px !important;
   }
 }
 
