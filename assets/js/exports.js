@@ -105,7 +105,20 @@ async function exportTable(tableName, label) {
         cleanData = data.map(s => ({ id: s.id, name: s.name, contact: s.contact, email: s.email, city: s.city, gst: s.gst, category: s.category, payment_terms: s.payment_terms, balance: s.balance }));
         break;
       case 'daily_transactions':
-        cleanData = data.map(dt => ({ id: dt.id, txn_no: dt.txn_no, client_name: dt.client_name, date: dt.date, total_amount: dt.total_amount, paid_amount: dt.paid_amount, notes: dt.notes }));
+        cleanData = data.map(dt => {
+          let tNo = dt.txn_no;
+          if (tNo) {
+            const m = String(tNo).match(/^(?:DTXN|D)-?(\d+)$/i);
+            if (m) {
+              let n = parseInt(m[1], 10);
+              if (n >= 1000) n = n - 1000;
+              tNo = `D-${String(n).padStart(2, '0')}`;
+            }
+          } else {
+            tNo = dt.id ? `D-${String(dt.id).padStart(2, '0')}` : '-';
+          }
+          return { id: dt.id, txn_no: tNo, client_name: dt.client_name, date: dt.date, total_amount: dt.total_amount, paid_amount: dt.paid_amount, notes: dt.notes };
+        });
         break;
     }
     

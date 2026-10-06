@@ -211,6 +211,18 @@ async function loadDailyTransactions() {
   }
 }
 
+function formatDailyTxnNo(txnNo, id) {
+  if (!txnNo) return id ? `D-${String(id).padStart(2, '0')}` : '-';
+  const s = String(txnNo).trim();
+  const match = s.match(/^(?:DTXN|D)-?(\d+)$/i);
+  if (match) {
+    let n = parseInt(match[1], 10);
+    if (n >= 1000) n = n - 1000;
+    return `D-${String(n).padStart(2, '0')}`;
+  }
+  return s;
+}
+
 function renderTable(data) {
   const tbody = document.querySelector('#daily-transactions-table tbody');
   if (!tbody) return;
@@ -226,7 +238,7 @@ function renderTable(data) {
 
   tbody.innerHTML = filtered.map(t => `
     <tr>
-      <td class="cell-mono">${t.txn_no}</td>
+      <td class="cell-mono">${formatDailyTxnNo(t.txn_no, t.id)}</td>
       <td>${UTILS.fmtDate(t.date)}</td>
       <td>${t.material_summary || t.item_summary || 'No materials recorded'}</td>
       <td>${t.notes ? t.notes : '—'}</td>
@@ -279,8 +291,10 @@ function filterTransactions(data) {
     if (toDate && tDateStr > toDate) return false;
 
     if (q) {
+      const formattedNo = formatDailyTxnNo(t.txn_no, t.id).toLowerCase();
       const haystack = [
         t.txn_no,
+        formattedNo,
         t.material_summary,
         t.item_summary,
         t.notes
@@ -291,6 +305,26 @@ function filterTransactions(data) {
     return true;
   });
   return UTILS.sortLatestFirst(list, t => t.txn_no || t.id);
+}
+
+async function getNextDailyTxnNo() {
+  try {
+    const { data: allTxns } = await window.dbClient.from('daily_transactions').select('id, txn_no');
+    let maxNum = 0;
+    (allTxns || []).forEach(t => {
+      const s = String(t.txn_no || '');
+      const match = s.match(/^(?:DTXN|D)-?(\d+)$/i);
+      if (match) {
+        let n = parseInt(match[1], 10);
+        if (n >= 1000) n = n - 1000;
+        if (n > maxNum && n < 100000) maxNum = n;
+      }
+    });
+    return `D-${String(maxNum + 1).padStart(2, '0')}`;
+  } catch (err) {
+    console.error('Error generating next daily txn no:', err);
+    return 'D-01';
+  }
 }
 
 function updateStats(data) {
@@ -326,17 +360,10 @@ async function openAdd() {
   renderMaterialsList();
 
   try {
-    const { data: lastTxn } = await window.dbClient.from('daily_transactions').select('txn_no').order('id', {ascending: false}).limit(1);
-    let nextNo = 'DTXN-1001';
-    if (lastTxn && lastTxn.length > 0 && lastTxn[0].txn_no) {
-      const match = lastTxn[0].txn_no.match(/\d+/);
-      if (match) {
-        nextNo = 'DTXN-' + (parseInt(match[0]) + 1);
-      }
-    }
+    const nextNo = await getNextDailyTxnNo();
     document.getElementById('txn-no-field').value = nextNo;
   } catch (err) {
-    document.getElementById('txn-no-field').value = '';
+    document.getElementById('txn-no-field').value = 'D-01';
   }
 
   UTILS.applyDefaultDateInputs(document.getElementById('daily-transaction-form'));
@@ -356,7 +383,7 @@ async function openEdit(id) {
     const { data: mats } = await window.dbClient.from('daily_transaction_materials').select('*').eq('daily_transaction_id', id);
 
     document.getElementById('modal-title').textContent = 'Edit Daily Entry';
-    document.getElementById('txn-no-field').value = t.txn_no;
+    document.getElementById('txn-no-field').value = formatDailyTxnNo(t.txn_no, t.id);
     const existingDateValue = String(t.date || '').substring(0, 10);
     if (existingDateValue) {
       document.getElementById('txn-date-field').value = existingDateValue;
@@ -510,7 +537,11 @@ function renderMaterialsList() {
 async function saveTransaction() {
   const date = document.getElementById('txn-date-field').value;
   const notes = document.getElementById('notes-field').value || '';
-  const txn_no = document.getElementById('txn-no-field').value || '';
+  let txn_no = document.getElementById('txn-no-field').value || '';
+  txn_no = formatDailyTxnNo(txn_no);
+  if (!txn_no || txn_no === '-') {
+    txn_no = await getNextDailyTxnNo();
+  }
 
   if (!date) {
     APP.showToast('Please select a date.', 'error');
@@ -673,3 +704,33 @@ function transactionFormNextStep() {
   }
   goToTransactionStep(transactionFormStep + 1);
 }
+
+// Auto migrate legacy daily transactions to standard D-01, D-02...
+(async function migrateLegacyDailyTxns() {
+  try {
+    if (!window.dbClient) return;
+    const { data: txns } = await window.dbClient.from('daily_transactions').select('id, txn_no').order('id', { ascending: true });
+    if (txns && txns.length > 0) {
+      let seq = 1;
+      for (const t of txns) {
+        const s = String(t.txn_no || '');
+        if (/^DTXN-/i.test(s) || !s) {
+          const match = s.match(/\d+/);
+          let n = match ? parseInt(match[0], 10) : seq;
+          if (n >= 1000) n = n - 1000;
+          const newNo = `D-${String(n).padStart(2, '0')}`;
+          await window.dbClient.from('daily_transactions').update({ txn_no: newNo }).eq('id', t.id);
+        } else {
+          const dMatch = s.match(/^D-(\d+)$/i);
+          if (dMatch) {
+            const n = parseInt(dMatch[1], 10);
+            if (n >= seq) seq = n;
+          }
+        }
+        seq++;
+      }
+    }
+  } catch (e) {
+    console.warn('Daily transaction migration notice:', e);
+  }
+})();

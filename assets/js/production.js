@@ -40,7 +40,7 @@ async function loadData() {
 
       prodBatches = fData.map(f => ({
         id: f.id,
-        batch_no: f.batch_no,
+        batch_no: formatBatchNo(f.batch_no, f.id),
         product_id: f.product_id,
         product_name: f.product_name,
         formula_name: f.product_name,
@@ -77,6 +77,17 @@ function populateProductSelect() {
   if (window.UniversalSearchSelect) new UniversalSearchSelect(select);
 }
 
+function formatBatchNo(batchNo, id) {
+  if (!batchNo) return id ? `B-${String(id).padStart(2, '0')}` : '-';
+  const s = String(batchNo).trim();
+  const m = s.match(/^(?:BATCH|B)-?(\d+)$/i);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (n < 100000) return `B-${String(n).padStart(2, '0')}`;
+  }
+  return s;
+}
+
 function renderTable(data) {
   const tbody = document.querySelector('#production-table tbody');
   if (!tbody) return;
@@ -87,8 +98,9 @@ function renderTable(data) {
   }
   
   tbody.innerHTML = data.map(b => {
+    const displayBatch = formatBatchNo(b.batch_no, b.id);
     return `<tr>
-      <td class="cell-bold">${b.batch_no || '-'}</td>
+      <td class="cell-bold">${displayBatch}</td>
       <td>${b.product_name || '-'}</td>
       <td>${b.formula_name || '-'}</td>
       <td>${UTILS.fmtDate(b.date)}</td>
@@ -109,13 +121,13 @@ async function getNextProductionBatchNo() {
   try {
     const { data: formBatches } = await window.dbClient
       .from('formulations')
-      .select('batch_no');
+      .select('id, batch_no');
       
     let maxNum = 0;
     const all = [...(allProductions || []), ...(formBatches || [])];
     for (const b of all) {
       if (b.batch_no && typeof b.batch_no === 'string') {
-        const match = b.batch_no.match(/^(?:BATCH|B)-(\d+)$/i);
+        const match = b.batch_no.match(/^(?:BATCH|B)-?(\d+)$/i);
         if (match) {
           const n = parseInt(match[1], 10);
           if (!isNaN(n) && n > maxNum && n < 100000) {
@@ -124,10 +136,10 @@ async function getNextProductionBatchNo() {
         }
       }
     }
-    return `BATCH-${String(maxNum + 1).padStart(2, '0')}`;
+    return `B-${String(maxNum + 1).padStart(2, '0')}`;
   } catch (err) {
     console.error('Error getting next production batch no:', err);
-    return 'BATCH-01';
+    return 'B-01';
   }
 }
 
@@ -348,8 +360,8 @@ async function saveProduction() {
 
   try {
     const prodObj = cachedProducts.find(p => p.id == d.product_id);
-    let finalBatchNo = d.batch_no;
-    if (!finalBatchNo) {
+    let finalBatchNo = d.batch_no ? formatBatchNo(d.batch_no) : '';
+    if (!finalBatchNo || finalBatchNo === '-') {
       finalBatchNo = await getNextProductionBatchNo();
     }
     
@@ -414,7 +426,7 @@ async function saveProduction() {
             item_id: itemId,
             item_name: invObj ? invObj.name : 'Produced Good',
             item_type: 'Inventory',
-            batch_no: finalBatchNo || 'BATCH-01',
+            batch_no: finalBatchNo || 'B-01',
             initial_qty: qty,
             current_qty: qty,
             unit: line.unit || (invObj ? invObj.unit : 'Kg'),
@@ -518,6 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('production-search-input')?.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = allProductions.filter(b => 
+      (formatBatchNo(b.batch_no, b.id) || '').toLowerCase().includes(term) ||
       (b.batch_no || '').toLowerCase().includes(term) ||
       (b.product_name || '').toLowerCase().includes(term)
     );
@@ -526,3 +539,33 @@ document.addEventListener('DOMContentLoaded', () => {
   
   setTimeout(() => loadData(), 100);
 });
+
+// Auto migrate legacy production batches to standard B-01, B-02...
+(async function migrateLegacyProductionBatches() {
+  try {
+    if (!window.dbClient) return;
+    const { data: forms } = await window.dbClient.from('formulations').select('id, batch_no').order('id', { ascending: true });
+    if (forms && forms.length > 0) {
+      let seq = 1;
+      for (const f of forms) {
+        const b = String(f.batch_no || '');
+        if (/^BATCH-\d+/i.test(b) || /^B-\d{6,}/i.test(b) || !b) {
+          const newNo = `B-${String(seq).padStart(2, '0')}`;
+          await window.dbClient.from('formulations').update({ batch_no: newNo }).eq('id', f.id);
+          if (b) {
+            await window.dbClient.from('stock_batches').update({ batch_no: newNo }).eq('batch_no', b);
+          }
+        } else {
+          const match = b.match(/^B-(\d+)$/i);
+          if (match) {
+            const n = parseInt(match[1], 10);
+            if (n >= seq) seq = n;
+          }
+        }
+        seq++;
+      }
+    }
+  } catch (e) {
+    console.warn('Production batch migration notice:', e);
+  }
+})();

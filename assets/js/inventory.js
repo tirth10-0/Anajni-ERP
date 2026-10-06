@@ -264,18 +264,23 @@ async function viewBatches(type, id) {
       let tableOrCardContent = '';
       if (isMobile) {
         tableOrCardContent = batches.map(b => {
-          const isOpen = b.batch_no && b.batch_no.includes('OPEN');
-          const batchNoDisplay = (b.batch_no || '—').replace(/^PUR-(\d+)$/i, 'P-$1');
+          const isOpen = b.batch_no && b.batch_no.toUpperCase().includes('OPEN');
+          const isProd = b.batch_no && (/^(?:BATCH|B)-/i.test(b.batch_no));
+          const batchNoDisplay = (b.batch_no || '—')
+            .replace(/^PUR-(\d+)$/i, 'P-$1')
+            .replace(/^(?:BATCH|B)-?(\d+)$/i, (m, g) => `B-${g.padStart(2, '0')}`);
           const pur = b.purchase_id ? purMap[b.purchase_id] : null;
           const sourceText = pur 
             ? `${pur.supplier_name || 'Purchase'} (${pur.purchase_no || ('P-' + String(b.purchase_id).padStart(2, '0'))})` 
-            : (b.supplier_name || (b.purchase_id ? `Purchase #P-${String(b.purchase_id).padStart(2, '0')}` : 'Opening Stock Entry'));
+            : (b.supplier_name || (b.purchase_id ? `Purchase #P-${String(b.purchase_id).padStart(2, '0')}` : (isProd ? 'Production' : 'Opening Stock Entry')));
+          const badgeClass = isOpen ? 'badge-purple' : (isProd ? 'badge-info' : 'badge-success');
+          const badgeText = isOpen ? 'Opening Stock' : (isProd ? 'Production Batch' : 'Purchase Batch');
           
           return `
             <div style="padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
                 <span class="cell-mono" style="font-weight: 700; font-size: 13.5px; color: var(--text-primary); word-break: break-all;">${batchNoDisplay}</span>
-                <span class="badge ${isOpen ? 'badge-purple' : 'badge-success'}" style="font-size:11px;">${isOpen ? 'Opening Stock' : 'Purchase Batch'}</span>
+                <span class="badge ${badgeClass}" style="font-size:11px;">${badgeText}</span>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
                 <span style="word-break: break-word;">Source: ${sourceText}</span>
@@ -304,16 +309,22 @@ async function viewBatches(type, id) {
               </thead>
               <tbody>
                 ${batches.map(b => {
-                  const batchNoDisplay = (b.batch_no || '—').replace(/^PUR-(\d+)$/i, 'P-$1');
+                  const isOpen = b.batch_no && b.batch_no.toUpperCase().includes('OPEN');
+                  const isProd = b.batch_no && (/^(?:BATCH|B)-/i.test(b.batch_no));
+                  const batchNoDisplay = (b.batch_no || '—')
+                    .replace(/^PUR-(\d+)$/i, 'P-$1')
+                    .replace(/^(?:BATCH|B)-?(\d+)$/i, (m, g) => `B-${g.padStart(2, '0')}`);
                   const pur = b.purchase_id ? purMap[b.purchase_id] : null;
                   const sourceText = pur 
                     ? `${pur.supplier_name || 'Purchase'} (${pur.purchase_no || ('P-' + String(b.purchase_id).padStart(2, '0'))})` 
-                    : (b.supplier_name || (b.purchase_id ? `Purchase #P-${String(b.purchase_id).padStart(2, '0')}` : 'Opening Stock Entry'));
+                    : (b.supplier_name || (b.purchase_id ? `Purchase #P-${String(b.purchase_id).padStart(2, '0')}` : (isProd ? 'Production' : 'Opening Stock Entry')));
+                  const badgeClass = isOpen ? 'badge-purple' : (isProd ? 'badge-info' : 'badge-success');
+                  const badgeText = isOpen ? 'Opening Stock' : (isProd ? 'Production Batch' : 'Purchase Batch');
                   
                   return `
                     <tr>
                       <td class="cell-mono">${batchNoDisplay}</td>
-                      <td><span class="badge ${ (b.batch_no && b.batch_no.includes('OPEN')) ? 'badge-purple' : 'badge-success'}">${ (b.batch_no && b.batch_no.includes('OPEN')) ? 'Opening Stock' : 'Purchase Batch'}</span></td>
+                      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
                       <td>${sourceText}</td>
                       <td>${b.purchase_date ? UTILS.fmtDate(b.purchase_date) : '—'}</td>
                       <td>${UTILS.fmtCurrency(b.purchase_price)}</td>

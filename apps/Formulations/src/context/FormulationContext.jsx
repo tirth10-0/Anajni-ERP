@@ -21,7 +21,15 @@ export const mapDbToReactFormulation = (dbForm) => {
     baseVolume: parseFloat(dbForm.batch_size) || 1000,
     baseUnit: dbForm.batch_unit || 'L',
     status: dbForm.status || 'Draft',
-    batchNo: dbForm.batch_no || '',
+    batchNo: (() => {
+      const raw = dbForm.batch_no || '';
+      const m = String(raw).match(/^(?:BATCH|B)-?(\d+)$/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n < 100000) return `B-${String(n).padStart(2, '0')}`;
+      }
+      return raw;
+    })(),
     ingredients: (dbForm.ingredients || []).map(ing => ({
       productId: ing.product_id || '',
       name: ing.product_name || '',
@@ -36,10 +44,20 @@ export const mapDbToReactFormulation = (dbForm) => {
 
 // Mapper: React -> DB
 export const mapReactToDbFormulation = (reactForm) => {
+  let bNo = reactForm.batchNo;
+  if (bNo) {
+    const m = String(bNo).match(/^(?:BATCH|B)-?(\d+)$/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n < 100000) bNo = `B-${String(n).padStart(2, '0')}`;
+    }
+  } else {
+    bNo = 'B-01';
+  }
   return {
     product_id: parseInt(reactForm.productId, 10),
     product_name: reactForm.name,
-    batch_no: reactForm.batchNo || 'B-' + Date.now(),
+    batch_no: bNo,
     batch_size: parseFloat(reactForm.baseVolume) || 1000,
     batch_unit: reactForm.baseUnit || 'L',
     status: reactForm.status || 'Draft',

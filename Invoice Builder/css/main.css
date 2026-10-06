@@ -1534,73 +1534,102 @@ td .row-total {
   background: rgba(12, 57, 37, 0.08);
 }
 
-/* ─── MOBILE BOTTOM TAB BAR ─────────────────────────── */
+/* ─── MOBILE BOTTOM TAB BAR (ERP Rounded Dock) ─────────────────────────── */
 #mobile-tabs {
   display: none;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56px;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: var(--bg-card);
-  border-top: 1px solid var(--border);
-  z-index: 2000;
-  align-items: stretch;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  left: 14px;
+  right: 14px;
+  height: 62px;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(2, 6, 24, 0.12) !important;
+  border-radius: 20px !important;
+  z-index: 9999;
+  align-items: center;
+  justify-content: space-around;
+  padding: 4px 6px;
+  box-shadow: 0 8px 24px rgba(2, 6, 24, 0.12), 0 2px 6px rgba(2, 6, 24, 0.04);
+}
+
+[data-theme="dark"] #mobile-tabs {
+  background: rgba(15, 23, 42, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .mob-tab {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   cursor: pointer;
-  background: none;
+  background: transparent;
   border: none;
-  color: var(--text-muted);
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+  color: #475569;
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
   font-family: "Inter", sans-serif;
-  transition: all 0.2s;
-  padding: 4px 0;
-  min-width: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 6px 2px;
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none !important;
+}
+
+[data-theme="dark"] .mob-tab {
+  color: #94a3b8;
 }
 
 .mob-tab .material-symbols-outlined {
-  font-size: 22px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mob-tab:hover {
+  color: #0C3925;
+}
+
+[data-theme="dark"] .mob-tab:hover {
+  color: #34d399;
 }
 
 .mob-tab.active {
-  color: var(--primary);
-  background: none !important;
+  background: #0C3925 !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  padding: 6px 4px !important;
+  margin: 0 !important;
+  box-shadow: 0 2px 8px rgba(12, 57, 37, 0.25) !important;
 }
 
-@media (max-width: 768px) {
-  #mob-history-tab {
-    color: var(--text-muted) !important;
-  }
+.mob-tab.active .material-symbols-outlined {
+  color: #ffffff !important;
+}
 
-  #mob-history-tab .material-symbols-outlined {
-    color: inherit !important;
-  }
+[data-theme="dark"] .mob-tab.active {
+  background: #10b981 !important;
+  color: #020618 !important;
+}
+
+[data-theme="dark"] .mob-tab.active .material-symbols-outlined {
+  color: #020618 !important;
 }
 
 .mob-tab-pdf {
   background: none;
-  color: var(--text-muted);
-}
-
-.mob-tab-pdf.active {
-  color: var(--primary);
+  color: inherit;
 }
 
 .mob-tab-pdf:hover {
-  color: #94a3b8;
+  color: #34d399;
 }
 
 .mob-tab-pdf:active {
@@ -1745,67 +1774,7 @@ td .row-total {
   background: rgba(12, 57, 37, 0.08);
 }
 
-/* ─── MOBILE BOTTOM TAB BAR ─────────────────────────── */
-#mobile-tabs {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56px;
-  background: var(--bg-card);
-  border-top: 1px solid var(--border);
-  z-index: 2000;
-  align-items: stretch;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-}
-
-.mob-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  font-family: "Inter", sans-serif;
-  transition: all 0.2s;
-  padding: 4px 0;
-  min-width: 0;
-}
-
-.mob-tab .material-symbols-outlined {
-  font-size: 22px;
-}
-
-.mob-tab.active {
-  color: var(--primary);
-  background: none !important;
-}
-
-.mob-tab-pdf {
-  background: none;
-  color: var(--text-muted);
-}
-
-.mob-tab-pdf.active {
-  color: var(--primary);
-}
-
-.mob-tab-pdf:hover {
-  color: #94a3b8;
-}
-
-.mob-tab-pdf:active {
-  background: transparent;
-}
+/* (Mobile bottom tab styles defined above) */
 
 /* Nav tabs — solid active indicator bar on top */
 .mob-nav-tab {

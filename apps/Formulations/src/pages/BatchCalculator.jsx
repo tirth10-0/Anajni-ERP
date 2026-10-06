@@ -7,12 +7,30 @@ import { calculateBatchQuantities, calculateTotalCost, formatNumber, formatCurre
 const BatchCalculator = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { updateFormulation } = useFormulations();
+  const { formulations, updateFormulation } = useFormulations();
   const formulation = location.state?.formulation;
+
+  const nextSeqBatchNo = useMemo(() => {
+    let max = 0;
+    (formulations || []).forEach(f => {
+      const m = String(f.batchNo || '').match(/^(?:BATCH|B)-?(\d+)$/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n > max && n < 100000) max = n;
+      }
+    });
+    return `B-${String(max + 1).padStart(2, '0')}`;
+  }, [formulations]);
 
   const [batchSize, setBatchSize] = useState(formulation?.baseVolume || 1000);
   const [batchUnit, setBatchUnit] = useState(formulation?.baseUnit || 'L');
-  const [batchNo, setBatchNo] = useState(`BATCH-${Date.now().toString().slice(-6)}`);
+  const [batchNo, setBatchNo] = useState(formulation?.batchNo || 'B-01');
+
+  useEffect(() => {
+    if (!formulation?.batchNo && nextSeqBatchNo) {
+      setBatchNo(nextSeqBatchNo);
+    }
+  }, [nextSeqBatchNo, formulation?.batchNo]);
   const [editedIngredients, setEditedIngredients] = useState(
     formulation?.ingredients?.reduce((acc, ing, idx) => {
       acc[idx] = { percentage: parseFloat(ing.percentage) || 0, quantity: parseFloat(ing.quantity) || 0 };
@@ -447,7 +465,7 @@ const BatchCalculator = () => {
                         input.setSelectionRange(start, end);
                       });
                     }}
-                    placeholder="BATCH-XXXXXX"
+                    placeholder="B-01"
                     className="form-input font-mono"
                   />
                 </div>

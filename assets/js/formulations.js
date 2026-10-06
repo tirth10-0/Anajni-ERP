@@ -597,7 +597,10 @@ function renderFormulationsGrid(data) {
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
           <div>
             <div style="font-size:16px;font-weight:800">${escapeHtml(getFormulationName(row))}</div>
-            <div style="font-size:12px;color:var(--text-muted)">${UTILS.fmtDate(row.date)} • ${formatQty(row.batch_size || 0)} ${escapeHtml(row.batch_unit || 'L')}</div>
+            <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">
+              ${row.batch_no ? `<span class="badge badge-purple" style="font-size:10.5px;">${String(row.batch_no).replace(/^(?:BATCH|B)-?(\d+)$/i, (m, g) => 'B-' + g.padStart(2, '0'))}</span>` : ''}
+              <span>${UTILS.fmtDate(row.date)} • ${formatQty(row.batch_size || 0)} ${escapeHtml(row.batch_unit || 'L')}</span>
+            </div>
           </div>
           ${UTILS.statusBadge(row.status || 'Draft')}
         </div>
@@ -831,13 +834,13 @@ async function openProduction(id) {
   document.getElementById('prod-formulation-id').value = id;
   let maxProdNum = 0;
   (allFormulations || []).forEach(f => {
-    const match = String(f.batch_no || '').match(/^(?:BATCH|B)-(\d+)$/i);
+    const match = String(f.batch_no || '').match(/^(?:BATCH|B)-?(\d+)$/i);
     if (match) {
       const n = parseInt(match[1], 10);
       if (n > maxProdNum && n < 100000) maxProdNum = n;
     }
   });
-  document.getElementById('prod-batch-no').value = `BATCH-${String(maxProdNum + 1).padStart(2, '0')}`;
+  document.getElementById('prod-batch-no').value = `B-${String(maxProdNum + 1).padStart(2, '0')}`;
   document.getElementById('prod-batch-size').value = row.batch_size || '';
   document.getElementById('prod-unit-label').textContent = row.batch_unit || 'L';
 

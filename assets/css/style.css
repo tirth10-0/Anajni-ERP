@@ -407,12 +407,13 @@ textarea {
 }
 
 .sidebar-brand h1 {
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 800;
   color: #0C3925 !important;
   white-space: nowrap;
   line-height: 1.15;
   letter-spacing: -0.3px;
+  text-overflow: ellipsis;
 }
 
 .sidebar-brand span {

@@ -127,6 +127,23 @@
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
   }
 
+  .sidebar-header {
+    padding: 0 14px !important;
+    gap: 10px !important;
+  }
+
+  .sidebar-brand {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar-brand h1 {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.3px !important;
+    white-space: nowrap !important;
+  }
+
   .sidebar-nav {
     padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
     -webkit-overflow-scrolling: touch !important;
