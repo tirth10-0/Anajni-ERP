@@ -133,11 +133,6 @@ const TOPBAR_HTML = (title, breadcrumb, logoUrl = getLogoUrl()) => `
       <span class="btn-text">Invoice Builder</span>
     </a>
 
-
-    <button class="topbar-refresh-btn" id="topbar-refresh-btn" type="button" onclick="hardReloadApp()" title="Refresh &amp; Update — clears cache" aria-label="Hard Refresh">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    </button>
-
     <div class="dropdown">
       <button class="user-avatar-btn" id="user-avatar-btn" type="button" aria-haspopup="menu" aria-expanded="false">
         <div class="user-avatar">AP</div>
@@ -147,9 +142,6 @@ const TOPBAR_HTML = (title, breadcrumb, logoUrl = getLogoUrl()) => `
       <div class="dropdown-menu" id="user-dropdown" role="menu" aria-label="User menu">
         <button class="dropdown-item" id="user-profile-btn" type="button" role="menuitem" onclick="window.location.href='profile.html'">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profile
-        </button>
-        <button class="dropdown-item" id="user-refresh-dropdown-btn" type="button" role="menuitem" onclick="hardReloadApp()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Hard Reload & Update
         </button>
         <div class="dropdown-divider"></div>
         <button class="dropdown-item dropdown-item-danger" id="user-logout-btn" type="button" role="menuitem">
