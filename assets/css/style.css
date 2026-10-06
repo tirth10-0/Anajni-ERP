@@ -1339,7 +1339,13 @@ textarea {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   }
 
-  .bottom-nav-item {
+  .bottom-nav-item,
+  .bottom-nav-item:link,
+  .bottom-nav-item:visited,
+  a.bottom-nav-item,
+  a.bottom-nav-item:link,
+  a.bottom-nav-item:visited,
+  button.bottom-nav-item {
     flex: 1 1 0;
     min-width: 0;
     display: flex;
@@ -1349,18 +1355,70 @@ textarea {
     gap: 3px;
     padding: 6px 2px;
     border-radius: 14px;
-    color: #475569;
+    color: #475569 !important;
     background: transparent;
     border: none;
-    text-decoration: none;
+    text-decoration: none !important;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  [data-theme="dark"] .bottom-nav-item {
-    color: #94a3b8;
+  .bottom-nav-item .bottom-nav-icon svg {
+    stroke: #475569 !important;
   }
 
-  .bottom-nav-item.active {
+  .bottom-nav-item .bottom-nav-label {
+    color: #475569 !important;
+  }
+
+  [data-theme="dark"] .bottom-nav-item,
+  [data-theme="dark"] .bottom-nav-item:link,
+  [data-theme="dark"] .bottom-nav-item:visited,
+  [data-theme="dark"] a.bottom-nav-item,
+  [data-theme="dark"] a.bottom-nav-item:link,
+  [data-theme="dark"] a.bottom-nav-item:visited,
+  [data-theme="dark"] button.bottom-nav-item {
+    color: #94a3b8 !important;
+  }
+
+  [data-theme="dark"] .bottom-nav-item .bottom-nav-icon svg {
+    stroke: #94a3b8 !important;
+  }
+
+  [data-theme="dark"] .bottom-nav-item .bottom-nav-label {
+    color: #94a3b8 !important;
+  }
+
+  .bottom-nav-item:hover,
+  a.bottom-nav-item:hover,
+  button.bottom-nav-item:hover {
+    color: #0C3925 !important;
+  }
+  .bottom-nav-item:hover .bottom-nav-icon svg {
+    stroke: #0C3925 !important;
+  }
+  .bottom-nav-item:hover .bottom-nav-label {
+    color: #0C3925 !important;
+  }
+
+  [data-theme="dark"] .bottom-nav-item:hover,
+  [data-theme="dark"] a.bottom-nav-item:hover,
+  [data-theme="dark"] button.bottom-nav-item:hover {
+    color: #34d399 !important;
+  }
+  [data-theme="dark"] .bottom-nav-item:hover .bottom-nav-icon svg {
+    stroke: #34d399 !important;
+  }
+  [data-theme="dark"] .bottom-nav-item:hover .bottom-nav-label {
+    color: #34d399 !important;
+  }
+
+  .bottom-nav-item.active,
+  .bottom-nav-item.active:link,
+  .bottom-nav-item.active:visited,
+  a.bottom-nav-item.active,
+  a.bottom-nav-item.active:link,
+  a.bottom-nav-item.active:visited,
+  button.bottom-nav-item.active {
     background: #0C3925 !important;
     color: #ffffff !important;
     border-radius: 12px !important;
@@ -1369,10 +1427,47 @@ textarea {
     box-shadow: 0 2px 8px rgba(12, 57, 37, 0.25) !important;
   }
 
+  [data-theme="dark"] .bottom-nav-item.active,
+  [data-theme="dark"] .bottom-nav-item.active:link,
+  [data-theme="dark"] .bottom-nav-item.active:visited,
+  [data-theme="dark"] a.bottom-nav-item.active,
+  [data-theme="dark"] a.bottom-nav-item.active:link,
+  [data-theme="dark"] a.bottom-nav-item.active:visited,
+  [data-theme="dark"] button.bottom-nav-item.active {
+    background: #10b981 !important;
+    color: #020618 !important;
+  }
+
+  .bottom-nav-item.active .bottom-nav-icon,
+  .bottom-nav-item.active .bottom-nav-icon svg,
+  .bottom-nav-item.active .bottom-nav-icon svg path,
+  .bottom-nav-item.active .bottom-nav-icon svg rect,
+  .bottom-nav-item.active .bottom-nav-icon svg line,
+  .bottom-nav-item.active .bottom-nav-icon svg polyline,
+  .bottom-nav-item.active .bottom-nav-icon svg circle {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+  }
+
   .bottom-nav-item.active .bottom-nav-label {
     color: #ffffff !important;
     font-weight: 800 !important;
     font-size: 8.5px !important;
+  }
+
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon,
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon svg,
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon svg path,
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon svg rect,
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon svg line,
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon svg polyline,
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-icon svg circle {
+    stroke: #020618 !important;
+    color: #020618 !important;
+  }
+
+  [data-theme="dark"] .bottom-nav-item.active .bottom-nav-label {
+    color: #020618 !important;
   }
 
   .bottom-nav-icon {
@@ -1388,17 +1483,6 @@ textarea {
     height: 17px;
     stroke: currentColor;
     stroke-width: 2;
-  }
-
-  .bottom-nav-item.active .bottom-nav-icon,
-  .bottom-nav-item.active .bottom-nav-icon svg,
-  .bottom-nav-item.active .bottom-nav-icon svg path,
-  .bottom-nav-item.active .bottom-nav-icon svg rect,
-  .bottom-nav-item.active .bottom-nav-icon svg line,
-  .bottom-nav-item.active .bottom-nav-icon svg polyline,
-  .bottom-nav-item.active .bottom-nav-icon svg circle {
-    stroke: #ffffff !important;
-    color: #ffffff !important;
   }
 
   .bottom-nav-label {

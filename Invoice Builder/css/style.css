@@ -1124,7 +1124,7 @@
             cursor: pointer;
             background: transparent;
             border: none;
-            color: #475569;
+            color: #475569 !important;
             font-size: 8.5px !important;
             font-weight: 700 !important;
             text-transform: uppercase !important;
@@ -1138,16 +1138,26 @@
         }
 
         [data-theme="dark"] .mob-tab {
-            color: #94a3b8;
+            color: #94a3b8 !important;
         }
 
         .mob-tab .material-symbols-outlined {
-            font-size: 20px;
+            font-size: 18px !important;
+            width: 18px !important;
+            height: 18px !important;
             line-height: 1;
+            color: #475569 !important;
+        }
+
+        [data-theme="dark"] .mob-tab .material-symbols-outlined {
+            color: #94a3b8 !important;
         }
 
         .mob-tab:hover {
-            color: #0C3925;
+            color: #0C3925 !important;
+        }
+        .mob-tab:hover .material-symbols-outlined {
+            color: #0C3925 !important;
         }
 
         [data-theme="dark"] .mob-tab:hover {
@@ -1218,7 +1228,7 @@
         }
 
         .mob-action-tab .material-symbols-outlined {
-            font-size: 22px
+            font-size: 18px !important;
         }
 
         /* New invoice action — green accent */
@@ -1409,7 +1419,7 @@
 
             /* Very small phones: shrink tab icons + hide labels for action tabs */
             .mob-tab .material-symbols-outlined {
-                font-size: 20px
+                font-size: 18px !important;
             }
 
             .mob-action-tab {

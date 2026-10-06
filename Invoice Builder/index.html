@@ -30,12 +30,12 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
   <!-- App Scripts -->
-  <script src="js/api.js?v=1791265146777"></script>
-  <script src="js/tax-utils.js?v=1791265146777"></script>
-  <script src="js/storage.js?v=1791265146777"></script>
+  <script src="js/api.js?v=1791269096312"></script>
+  <script src="js/tax-utils.js?v=1791269096312"></script>
+  <script src="js/storage.js?v=1791269096312"></script>
   <!-- Styles -->
-  <link rel="stylesheet" href="css/main.css?v=1791265146777" />
-  <link rel="stylesheet" href="css/override.css?v=1791265146777" />
+  <link rel="stylesheet" href="css/main.css?v=1791269096312" />
+  <link rel="stylesheet" href="css/override.css?v=1791269096312" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../assets/js/database.js"></script>
     <link rel="icon" type="image/png" href="../assets/images/logo-rounded.png?v=1791036879151">
@@ -85,22 +85,28 @@
   <!-- ── MOBILE BOTTOM TAB BAR ────────────────────────── -->
   <div id="mobile-tabs" style="display:none;">
     <a class="mob-tab mob-nav-tab" href="../pages/dashboard.html">
-      <span class="material-symbols-outlined">dashboard</span> ERP
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mob-tab-label">ERP</span>
     </a>
     <a class="mob-tab mob-nav-tab" id="mob-history-tab" href="history.html">
-      <span class="material-symbols-outlined">history</span> History
+      <span class="material-symbols-outlined">history</span>
+      <span class="mob-tab-label">History</span>
     </a>
     <button class="mob-tab mob-nav-tab active" id="mob-edit-tab" onclick="showMobilePanel('edit')">
-      <span class="material-symbols-outlined">edit_note</span> Edit
+      <span class="material-symbols-outlined">edit_note</span>
+      <span class="mob-tab-label">Edit</span>
     </button>
     <button class="mob-tab mob-nav-tab" id="mob-preview-tab" onclick="showMobilePanel('preview')">
-      <span class="material-symbols-outlined">article</span> Preview
+      <span class="material-symbols-outlined">article</span>
+      <span class="mob-tab-label">Preview</span>
     </button>
     <button class="mob-tab mob-action-tab" id="mob-save-btn" onclick="saveToCloud()">
-      <span class="material-symbols-outlined">cloud_upload</span> Save
+      <span class="material-symbols-outlined">cloud_upload</span>
+      <span class="mob-tab-label">Save</span>
     </button>
     <button class="mob-tab mob-action-tab mob-tab-pdf" id="mob-pdf-btn">
-      <span class="material-symbols-outlined">picture_as_pdf</span> PDF
+      <span class="material-symbols-outlined">picture_as_pdf</span>
+      <span class="mob-tab-label">PDF</span>
     </button>
   </div>
 
@@ -505,8 +511,8 @@ Wednesday and Sunday Company Holiday.</textarea>
   </div>
 
   <!-- Main App Script (last, so DOM is ready) -->
-  <script src="js/invoice-pdf.js?v=1791265146777"></script>
-  <script src="js/main.js?v=1791265146777"></script>
+  <script src="js/invoice-pdf.js?v=1791269096312"></script>
+  <script src="js/main.js?v=1791269096312"></script>
 
 </body>
 
