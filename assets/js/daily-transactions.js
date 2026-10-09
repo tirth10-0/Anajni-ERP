@@ -164,21 +164,21 @@ async function loadDailyTransactions() {
     UTILS.renderTableSkeleton('daily-transactions-table');
     await DB.initDB();
 
-    const { data: invData, error: invErr } = await window.dbClient.from('inventory_items').select('*');
-    inventoryItems = invErr ? [] : invData || [];
+    // High performance: parallelize inventory_items, stock_batches, and daily_transactions
+    const [invRes, batchRes, txnRes] = await Promise.all([
+      window.dbClient.from('inventory_items').select('*'),
+      window.dbClient.from('stock_batches').select('item_id, current_qty').eq('item_type', 'Inventory').gt('current_qty', 0),
+      window.dbClient.from('daily_transactions').select('*').order('id', { ascending: false })
+    ]);
 
-    // Query stock_batches to calculate exact total available stock for all inventory items
+    inventoryItems = invRes.error ? [] : invRes.data || [];
+
     itemBatchStockMap = {};
-    const { data: batches } = await window.dbClient.from('stock_batches')
-      .select('item_id, current_qty')
-      .eq('item_type', 'Inventory')
-      .gt('current_qty', 0);
-    if (batches) {
-      batches.forEach(b => {
-        const qty = Math.max(0, parseFloat(b.current_qty) || 0);
-        itemBatchStockMap[b.item_id] = (itemBatchStockMap[b.item_id] || 0) + qty;
-      });
-    }
+    const batches = batchRes.data || [];
+    batches.forEach(b => {
+      const qty = Math.max(0, parseFloat(b.current_qty) || 0);
+      itemBatchStockMap[b.item_id] = (itemBatchStockMap[b.item_id] || 0) + qty;
+    });
 
     populateCategorizedMaterialSelects();
     if (window.UTILS?.initAllAutocompleteSelects) {
@@ -187,9 +187,8 @@ async function loadDailyTransactions() {
     }
     renderLowStockAlerts();
 
-    const { data: txnData, error: txnErr } = await window.dbClient.from('daily_transactions').select('*').order('id', { ascending: false });
-    if (txnErr) throw txnErr;
-    allDailyTransactions = UTILS.sortLatestFirst(txnData || [], t => t.txn_no || t.id);
+    if (txnRes.error) throw txnRes.error;
+    allDailyTransactions = UTILS.sortLatestFirst(txnRes.data || [], t => t.txn_no || t.id);
 
     ['search-input', 'date-from-filter', 'date-to-filter'].forEach(id => {
       const el = document.getElementById(id);

@@ -24,6 +24,8 @@ window.DB = {
 };
 
 window.INVENTORY_SERVICE = {
+  _techCache: new Map(),
+
   async getItemStock(itemId) {
     if (!itemId) return 0;
     try {
@@ -48,28 +50,31 @@ window.INVENTORY_SERVICE = {
   async syncItemStock(itemId) {
     if (!itemId) return 0;
     try {
-      // Clamp any negative batches to 0
-      const { data: negBatches } = await window.dbClient
+      // Optimized: single query for all batches instead of two separate round-trips
+      const { data: batches, error } = await window.dbClient
         .from('stock_batches')
         .select('id, current_qty')
         .eq('item_id', itemId)
-        .eq('item_type', 'Inventory')
-        .lt('current_qty', 0);
-      if (negBatches && negBatches.length > 0) {
-        for (const nb of negBatches) {
-          await window.dbClient.from('stock_batches').update({ current_qty: 0 }).eq('id', nb.id);
+        .eq('item_type', 'Inventory');
+
+      if (error) throw error;
+
+      let totalStock = 0;
+      const negUpdates = [];
+
+      (batches || []).forEach(b => {
+        const qty = parseFloat(b.current_qty) || 0;
+        if (qty < 0) {
+          negUpdates.push(window.dbClient.from('stock_batches').update({ current_qty: 0 }).eq('id', b.id));
+        } else {
+          totalStock += qty;
         }
+      });
+
+      if (negUpdates.length > 0) {
+        await Promise.all(negUpdates);
       }
 
-      // Fetch all positive batches
-      const { data: batches } = await window.dbClient
-        .from('stock_batches')
-        .select('current_qty')
-        .eq('item_id', itemId)
-        .eq('item_type', 'Inventory')
-        .gt('current_qty', 0);
-
-      const totalStock = (batches || []).reduce((sum, b) => sum + (parseFloat(b.current_qty) || 0), 0);
       await window.dbClient.from('inventory_items').update({ stock: totalStock }).eq('id', itemId);
       return totalStock;
     } catch (e) {
@@ -90,17 +95,31 @@ window.INVENTORY_SERVICE = {
         .gt('current_qty', 0)
         .order('id', { ascending: true }); // FIFO: oldest batch first
 
+      const updates = [];
+      let newTotalStock = 0;
+
       if (batches && batches.length > 0) {
         for (const b of batches) {
-          if (remaining <= 0) break;
           const cur = parseFloat(b.current_qty) || 0;
-          const deduct = Math.min(cur, remaining);
-          const newQty = Math.max(0, cur - deduct);
-          await window.dbClient.from('stock_batches').update({ current_qty: newQty }).eq('id', b.id);
-          remaining -= deduct;
+          if (remaining > 0) {
+            const deduct = Math.min(cur, remaining);
+            const newQty = Math.max(0, cur - deduct);
+            updates.push(window.dbClient.from('stock_batches').update({ current_qty: newQty }).eq('id', b.id));
+            newTotalStock += newQty;
+            remaining -= deduct;
+          } else {
+            newTotalStock += cur;
+          }
         }
       }
-      return await this.syncItemStock(itemId);
+
+      if (updates.length > 0) {
+        await Promise.all(updates);
+      }
+
+      // Update inventory_items directly without an extra fetch round-trip
+      await window.dbClient.from('inventory_items').update({ stock: newTotalStock }).eq('id', itemId);
+      return newTotalStock;
     } catch (e) {
       console.warn('INVENTORY_SERVICE.deductStock error:', e);
       return 0;
@@ -146,6 +165,11 @@ window.INVENTORY_SERVICE = {
 
   async resolveTechnicalItem(productId, productName) {
     let pName = (productName || '').trim();
+    const cacheKey = `${productId || ''}_${pName.toLowerCase()}`;
+    if (this._techCache.has(cacheKey)) {
+      return this._techCache.get(cacheKey);
+    }
+
     let candidateId = null;
 
     if (productId) {
@@ -172,7 +196,10 @@ window.INVENTORY_SERVICE = {
           .select('id, name, unit, category, item_subtype')
           .eq('id', candidateId)
           .maybeSingle();
-        if (invRow) return invRow;
+        if (invRow) {
+          this._techCache.set(cacheKey, invRow);
+          return invRow;
+        }
       } catch (err) {
         console.warn('resolveTechnicalItem candidateId lookup error:', err);
       }
@@ -197,10 +224,9 @@ window.INVENTORY_SERVICE = {
           }) || matches[0];
 
           if (techMatch && productId) {
-            try {
-              await window.dbClient.from('products').update({ inventory_item_id: techMatch.id }).eq('id', productId);
-            } catch (_) {}
+            window.dbClient.from('products').update({ inventory_item_id: techMatch.id }).eq('id', productId).catch(() => {});
           }
+          this._techCache.set(cacheKey, techMatch);
           return techMatch;
         }
 
@@ -223,10 +249,9 @@ window.INVENTORY_SERVICE = {
             }) || fuzzyMatches[0];
 
             if (bestMatch && productId) {
-              try {
-                await window.dbClient.from('products').update({ inventory_item_id: bestMatch.id }).eq('id', productId);
-              } catch (_) {}
+              window.dbClient.from('products').update({ inventory_item_id: bestMatch.id }).eq('id', productId).catch(() => {});
             }
+            this._techCache.set(cacheKey, bestMatch);
             return bestMatch;
           }
         }
@@ -240,12 +265,27 @@ window.INVENTORY_SERVICE = {
 
   async reconcileAllStock() {
     try {
-      const { data: items } = await window.dbClient.from('inventory_items').select('id');
-      if (items && items.length > 0) {
-        for (const it of items) {
-          await this.syncItemStock(it.id);
+      const [{ data: items }, { data: batches }] = await Promise.all([
+        window.dbClient.from('inventory_items').select('id'),
+        window.dbClient.from('stock_batches').select('item_id, current_qty').eq('item_type', 'Inventory')
+      ]);
+
+      if (!items || items.length === 0) return true;
+
+      const totalsMap = {};
+      (batches || []).forEach(b => {
+        const qty = parseFloat(b.current_qty) || 0;
+        if (qty > 0) {
+          totalsMap[b.item_id] = (totalsMap[b.item_id] || 0) + qty;
         }
-      }
+      });
+
+      const updates = items.map(it => {
+        const stock = totalsMap[it.id] || 0;
+        return window.dbClient.from('inventory_items').update({ stock }).eq('id', it.id);
+      });
+
+      await Promise.all(updates);
       return true;
     } catch (e) {
       console.warn('INVENTORY_SERVICE.reconcileAllStock error:', e);
@@ -253,4 +293,3 @@ window.INVENTORY_SERVICE = {
     }
   }
 };
-

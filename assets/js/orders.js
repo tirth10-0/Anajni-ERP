@@ -18,21 +18,24 @@ let cachedBottlesList = [];
 
 async function fetchPackagingData() {
   try {
-    const { data: pkgData, error: pkgErr } = await window.dbClient.from('product_packaging').select('*');
-    if (!pkgErr && pkgData) {
-      allPackagingData = pkgData;
+    const [pkgRes, invRes, batchRes] = await Promise.all([
+      window.dbClient.from('product_packaging').select('*'),
+      window.dbClient.from('inventory_items').select('*'),
+      window.dbClient.from('stock_batches').select('item_id, current_qty').eq('item_type', 'Inventory')
+    ]);
+
+    if (!pkgRes.error && pkgRes.data) {
+      allPackagingData = pkgRes.data;
     }
-    const { data: invData, error: invErr } = await window.dbClient.from('inventory_items').select('*');
-    const { data: batches } = await window.dbClient.from('stock_batches').select('item_id, current_qty').eq('item_type', 'Inventory');
-    
+
     const stockMap = {};
-    (batches || []).forEach(b => {
+    (batchRes.data || []).forEach(b => {
       const qty = parseFloat(b.current_qty) || 0;
       stockMap[b.item_id] = (stockMap[b.item_id] || 0) + qty;
     });
 
-    if (!invErr && invData) {
-      cachedBottlesList = invData.filter(it => it.category === 'Bottles').map(it => ({
+    if (!invRes.error && invRes.data) {
+      cachedBottlesList = invRes.data.filter(it => it.category === 'Bottles').map(it => ({
         ...it,
         total_stock: stockMap[it.id] !== undefined ? stockMap[it.id] : (parseFloat(it.stock) || 0)
       }));
@@ -48,49 +51,55 @@ async function loadOrders() {
   try {
     UTILS.renderTableSkeleton('orders-table');
     await DB.initDB();
-    await fetchPackagingData();
-    
-    const { data: ordersData, error: ordersErr } = await window.dbClient.from('orders').select('*').order('id', { ascending: false });
-    if (ordersErr) throw ordersErr;
-    allOrders = UTILS.sortLatestFirst(ordersData || [], o => o.order_no || o.id);
-    
-    // Retrieve client list to map display names
-    const { data: clientsData, error: clientsErr } = await window.dbClient.from('clients').select('*');
-    const clientsList = clientsErr ? [] : (clientsData || []);
-    
+
+    // High performance: fetch packaging, inventory, stock batches, orders, clients, and order_items all in parallel!
+    const [pkgRes, invRes, batchRes, ordersRes, clientsRes, orderItemsRes] = await Promise.all([
+      window.dbClient.from('product_packaging').select('*'),
+      window.dbClient.from('inventory_items').select('*'),
+      window.dbClient.from('stock_batches').select('item_id, current_qty').eq('item_type', 'Inventory'),
+      window.dbClient.from('orders').select('*').order('id', { ascending: false }),
+      window.dbClient.from('clients').select('id, name'),
+      window.dbClient.from('order_items').select('*')
+    ]);
+
+    if (ordersRes.error) throw ordersRes.error;
+
+    // 1. Process packaging & bottle stock
+    if (!pkgRes.error && pkgRes.data) {
+      allPackagingData = pkgRes.data;
+    }
+    const stockMap = {};
+    (batchRes.data || []).forEach(b => {
+      const qty = parseFloat(b.current_qty) || 0;
+      stockMap[b.item_id] = (stockMap[b.item_id] || 0) + qty;
+    });
+    if (!invRes.error && invRes.data) {
+      cachedBottlesList = invRes.data.filter(it => it.category === 'Bottles').map(it => ({
+        ...it,
+        total_stock: stockMap[it.id] !== undefined ? stockMap[it.id] : (parseFloat(it.stock) || 0)
+      }));
+    }
+
+    // 2. Map clients in O(1) time
+    const clientMap = new Map();
+    (clientsRes.data || []).forEach(c => clientMap.set(c.id, c.name));
+
+    allOrders = UTILS.sortLatestFirst(ordersRes.data || [], o => o.order_no || o.id);
     allOrders.forEach(o => {
-      const match = clientsList.find(c => c.id === o.client_id);
-      o.client_display = match ? match.name : (o.client_name || '—');
+      o.client_display = clientMap.get(o.client_id) || o.client_name || '—';
     });
 
-    // Build comprehensive order items detailed array
-    await buildDetailedOrderItems();
+    // 3. Group order items in O(1) time without N+1 sequential requests
+    const itemsByOrderId = new Map();
+    (orderItemsRes.data || []).forEach(it => {
+      if (!itemsByOrderId.has(it.order_id)) itemsByOrderId.set(it.order_id, []);
+      itemsByOrderId.get(it.order_id).push(it);
+    });
 
-    applyFiltersAndRender();
-    updatePageDebug('Ready (' + allOrders.length + ')', '#0C3925');
-    setTimeout(() => UTILS.initAllAutocompleteSelects(), 50);
-  } catch (err) {
-    console.error('loadOrders failed:', err);
-    updatePageDebug('FAILED', '#EF4444');
-    APP.showToast('Failed to load orders: ' + err.message, 'error');
-  }
-}
-
-async function buildDetailedOrderItems() {
-  allDetailedItems = [];
-  try {
-    for (const o of allOrders) {
-      let items = o.items;
-      if (!items) {
-        const { data: detailData, error: detailErr } = await window.dbClient.from('order_items').select('*').eq('order_id', o.id);
-        if (!detailErr && detailData) {
-          items = detailData;
-          o.items = items;
-        } else {
-          items = [];
-        }
-      }
-      (items || []).forEach(it => {
+    allDetailedItems = [];
+    allOrders.forEach(o => {
+      o.items = itemsByOrderId.get(o.id) || [];
+      o.items.forEach(it => {
         allDetailedItems.push({
           order_id: o.id,
           order_no: o.order_no,
@@ -105,10 +114,20 @@ async function buildDetailedOrderItems() {
           total: it.total
         });
       });
-    }
+    });
+
+    applyFiltersAndRender();
+    updatePageDebug('Ready (' + allOrders.length + ')', '#0C3925');
+    setTimeout(() => UTILS.initAllAutocompleteSelects(), 50);
   } catch (err) {
-    console.error('Error building detailed order items:', err);
+    console.error('loadOrders failed:', err);
+    updatePageDebug('FAILED', '#EF4444');
+    APP.showToast('Failed to load orders: ' + err.message, 'error');
   }
+}
+
+async function buildDetailedOrderItems() {
+  return;
 }
 
 function applyFiltersAndRender() {
@@ -645,13 +664,14 @@ async function onProductSelectChange(idx, valOrEvt) {
   }
   let pkgOptions = p?.packaging_options || [];
   if (!pkgOptions.length && val) {
-    try {
-      const { data: pkgs, error: pkgErr } = await window.dbClient.from('product_packaging').select('*').eq('product_id', val);
-      if (!pkgErr && pkgs) {
-        pkgOptions = pkgs;
+    pkgOptions = allPackagingData.filter(pk => pk.product_id == val);
+    if (!pkgOptions.length) {
+      try {
+        const { data: pkgs, error: pkgErr } = await window.dbClient.from('product_packaging').select('*').eq('product_id', val);
+        if (!pkgErr && pkgs) pkgOptions = pkgs;
+      } catch (e) {
+        console.warn('Failed to fetch packaging directly for product:', val, e);
       }
-    } catch (e) {
-      console.warn('Failed to fetch packaging directly for product:', val, e);
     }
   }
   console.log(`[OrderRow ${idx}] Raw packaging_options array:`, pkgOptions);
@@ -679,13 +699,14 @@ async function onPackSizeChange(idx, val) {
   const p = cachedProductsList.find(x => x.id == it.product_id);
   let pkgOptions = p?.packaging_options || [];
   if (!pkgOptions.length && it.product_id) {
-    try {
-      const { data: pkgs, error: pkgErr } = await window.dbClient.from('product_packaging').select('*').eq('product_id', it.product_id);
-      if (!pkgErr && pkgs) {
-        pkgOptions = pkgs;
+    pkgOptions = allPackagingData.filter(pk => pk.product_id == it.product_id);
+    if (!pkgOptions.length) {
+      try {
+        const { data: pkgs, error: pkgErr } = await window.dbClient.from('product_packaging').select('*').eq('product_id', it.product_id);
+        if (!pkgErr && pkgs) pkgOptions = pkgs;
+      } catch (e) {
+        console.warn('Failed to fetch packaging on pack size change:', e);
       }
-    } catch (e) {
-      console.warn('Failed to fetch packaging on pack size change:', e);
     }
   }
 
@@ -1045,23 +1066,25 @@ async function revertOrderStock(orderId) {
 }
 
 async function insertOrderItemsAndSyncStock(orderId, items, orderNo) {
-  for (const it of items) {
-    const qty = parseFloat(it.quantity) || 0;
-    const packMl = UTILS.parsePackSizeInMl(it.packaging_size || it.packing_size) || 1000;
-    const volumeLiters = (packMl / 1000) * qty;
+  // Batch insert all order items in a single query
+  const itemRows = items.map(it => ({
+    order_id: orderId,
+    product_id: it.product_id ? parseInt(it.product_id, 10) : null,
+    product_name: it.product_name,
+    packing_size: it.packaging_size || it.packing_size || null,
+    bottle_inventory_id: it.bottle_inventory_id ? parseInt(it.bottle_inventory_id, 10) : null,
+    quantity: parseFloat(it.quantity) || 0,
+    unit_price: parseFloat(it.unit_price) || 0,
+    discount: 0,
+    total: parseFloat(it.total) || 0
+  }));
 
-    const itemRow = {
-      order_id: orderId,
-      product_id: it.product_id ? parseInt(it.product_id, 10) : null,
-      product_name: it.product_name,
-      packing_size: it.packaging_size || it.packing_size || null,
-      bottle_inventory_id: it.bottle_inventory_id ? parseInt(it.bottle_inventory_id, 10) : null,
-      quantity: qty,
-      unit_price: parseFloat(it.unit_price) || 0,
-      discount: 0,
-      total: parseFloat(it.total) || 0
-    };
-    await window.dbClient.from('order_items').insert([itemRow]);
+  if (itemRows.length > 0) {
+    const { error: insErr } = await window.dbClient.from('order_items').insert(itemRows);
+    if (insErr) throw insErr;
+  }
+
+  for (const it of items) {
 
     // 1. Deduct bottle stock if selected
     if (it.bottle_inventory_id && qty > 0) {

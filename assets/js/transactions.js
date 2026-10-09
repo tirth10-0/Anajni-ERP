@@ -21,20 +21,38 @@ async function loadTransactions() {
     UTILS.setSkeletonText('net-balance', 'w-50', true);
     
     await DB.initDB();
-    await loadAccounts();
-    
-    const { data: txnData, error: txnErr } = await window.dbClient
-      .from('transactions')
-      .select('*')
-      .order('id', { ascending: false });
 
-    if (txnErr) throw txnErr;
-    allTransactions = UTILS.sortLatestFirst(txnData || [], t => t.ref_no || t.id);
+    // High performance: fetch accounts and transactions simultaneously in a single parallel round-trip
+    const [accRes, txnRes] = await Promise.all([
+      window.dbClient.from('accounts').select('*').order('name'),
+      window.dbClient.from('transactions').select('*').order('id', { ascending: false })
+    ]);
 
-    // Map account name to each transaction and normalize ref_no for display
+    if (accRes.error) throw accRes.error;
+    if (txnRes.error) throw txnRes.error;
+
+    allAccounts = accRes.data || [];
+    const txnData = txnRes.data || [];
+    allTransactions = UTILS.sortLatestFirst(txnData, t => t.ref_no || t.id);
+
+    // Compute account balances in memory without making redundant queries
+    const accMap = new Map();
+    allAccounts.forEach(a => {
+      a.total_receipts = 0;
+      a.total_payments = 0;
+      a.net_balance = 0;
+      accMap.set(String(a.id), a);
+    });
+
     allTransactions.forEach(t => {
-      const acc = allAccounts.find(a => String(a.id) === String(t.account_id));
+      const acc = accMap.get(String(t.account_id));
       t.account_name = acc ? acc.name : '';
+      if (acc) {
+        const amt = parseFloat(t.amount) || 0;
+        if (t.type === 'Receipt') acc.total_receipts += amt;
+        else if (t.type === 'Payment') acc.total_payments += amt;
+        acc.net_balance = acc.total_receipts - acc.total_payments;
+      }
       
       // Determine display reference number
       if (!t.ref_no) {
@@ -48,7 +66,8 @@ async function loadTransactions() {
         }
       }
     });
-    
+
+    populateAccountDropdowns();
     applyFilters();
     
     updatePageDebug('Ready (' + allTransactions.length + ')', '#0C3925');
@@ -58,6 +77,22 @@ async function loadTransactions() {
     updatePageDebug('FAILED', '#EF4444');
     APP.showToast('Failed to load transactions: ' + err.message, 'error');
     renderTable([]);
+  }
+}
+
+function populateAccountDropdowns() {
+  const filterSelect = document.getElementById('account-filter');
+  if (filterSelect) {
+    const curVal = filterSelect.value;
+    filterSelect.innerHTML = '<option value="">All Accounts</option>' + 
+      allAccounts.map(a => `<option value="${a.id}" ${curVal == a.id ? 'selected' : ''}>${a.name} (₹${(a.net_balance || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})})</option>`).join('');
+  }
+
+  const formSelect = document.getElementById('txn-account-select');
+  if (formSelect) {
+    const curVal = formSelect.value;
+    formSelect.innerHTML = '<option value="">Select Account...</option>' + 
+      allAccounts.map(a => `<option value="${a.id}" ${curVal == a.id ? 'selected' : ''}>${a.name}</option>`).join('');
   }
 }
 

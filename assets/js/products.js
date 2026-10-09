@@ -467,7 +467,7 @@ function updatePageDebug(text, color) {
 let rawInventoryItems = [];
 async function loadTechnicalInventorySuggestions() {
   try {
-    const { data: items, error } = await window.dbClient.from('inventory_items').select('*');
+    const { data: items, error } = await window.dbClient.from('inventory_items').select('id, name, category, item_subtype');
     if (error) throw error;
     rawInventoryItems = items || [];
     technicalInventoryNames = (rawInventoryItems || [])
@@ -495,12 +495,12 @@ async function loadProducts() {
   console.log('Loading products...');
   updatePageDebug('Loading Products...', '#0C3925');
   try {
-    await loadTechnicalInventorySuggestions();
     UTILS.renderTableSkeleton('products-table');
     await DB.initDB();
     
-    // Fetch products and packaging options in parallel for high performance
-    const [prodRes, packRes] = await Promise.all([
+    // Fetch technical suggestions, products, and packaging options all in parallel
+    const [, prodRes, packRes] = await Promise.all([
+      loadTechnicalInventorySuggestions(),
       window.dbClient.from('products').select('*').order('id', { ascending: false }),
       window.dbClient.from('product_packaging').select('*')
     ]);

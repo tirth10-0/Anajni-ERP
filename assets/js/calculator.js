@@ -29,13 +29,13 @@ async function loadCalculator() {
   try {
     await DB.initDB();
     
-    // Fetch all formulations
-    const resForm = await fetch('/api/formulations');
+    // High performance: Fetch formulations and inventory items in parallel
+    const [resForm, resInv] = await Promise.all([
+      fetch('/api/formulations'),
+      fetch('/api/inventory')
+    ]);
     if (!resForm.ok) throw new Error('Failed to fetch formulations');
     allFormulations = await resForm.json();
-    
-    // Fetch all inventory items for checking raw materials stock
-    const resInv = await fetch('/api/inventory');
     if (resInv.ok) {
       allInventoryItems = await resInv.json();
     }

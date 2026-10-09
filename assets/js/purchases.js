@@ -61,10 +61,12 @@ async function loadPurchases() {
 
 async function refreshPurchasableItems() {
   try {
-    const { data: pData, error: pErr } = await window.dbClient.from('products').select('*');
-    const p = pErr ? [] : pData || [];
-    const { data: iData, error: iErr } = await window.dbClient.from('inventory_items').select('*');
-    const i = iErr ? [] : iData || [];
+    const [pRes, iRes] = await Promise.all([
+      window.dbClient.from('products').select('id, name, unit, item_size, packaging'),
+      window.dbClient.from('inventory_items').select('id, name, unit, item_size')
+    ]);
+    const p = pRes.data || [];
+    const i = iRes.data || [];
     
     const combined = [
       ...i.map(x => ({ id: x.id, name: x.name, unit: x.unit || 'Nos', type: 'Inventory', item_size: x.item_size })),
@@ -225,12 +227,10 @@ async function openEdit(id) {
 
 async function getNextPurchaseBatchNo(offset = 0) {
   try {
-    const { data: batches } = await window.dbClient
-      .from('stock_batches')
-      .select('batch_no');
-    const { data: purItems } = await window.dbClient
-      .from('purchase_items')
-      .select('batch_no');
+    const [{ data: batches }, { data: purItems }] = await Promise.all([
+      window.dbClient.from('stock_batches').select('batch_no'),
+      window.dbClient.from('purchase_items').select('batch_no')
+    ]);
       
     let maxNum = 0;
     const all = [...(batches || []), ...(purItems || [])];
@@ -505,12 +505,21 @@ async function savePurchaseDirect(payload, items) {
 
   // Insert purchase line items
   if (items && items.length > 0) {
+    const needsBatch = items.some(it => !it.batch_no || !it.batch_no.trim());
+    let initialBatchNo = '';
+    let startBatchNum = 1;
+    if (needsBatch) {
+      initialBatchNo = await getNextPurchaseBatchNo(0);
+      const m = initialBatchNo.match(/^(?:PUR|P)-(\d+)$/i);
+      if (m) startBatchNum = parseInt(m[1], 10);
+    }
+
     let unassignedBatchOffset = 0;
     const resolvedItems = [];
     for (const it of items) {
       let bNo = it.batch_no ? it.batch_no.trim() : '';
       if (!bNo) {
-        bNo = await getNextPurchaseBatchNo(unassignedBatchOffset);
+        bNo = `P-${String(startBatchNum + unassignedBatchOffset).padStart(2, '0')}`;
         unassignedBatchOffset++;
       }
       resolvedItems.push({
