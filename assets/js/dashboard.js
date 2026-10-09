@@ -39,7 +39,7 @@ async function loadDashboard() {
     const invData = invRes.data || [];
     const batches = batchRes.data || [];
 
-    // 1. Revenue KPI (Orders with Delivered status)
+    // 1. Revenue KPI (Orders with Delivered or Completed status, matching Business Reports)
     let revenue = 0;
     let activeOrders = 0;
     const currentYear = new Date().getFullYear();
@@ -47,13 +47,14 @@ async function loadDashboard() {
 
     allOrders.forEach(o => {
       const amt = parseFloat(o.total_amount) || 0;
-      const isDelivered = String(o.status || '').toLowerCase() === 'delivered';
+      const st = String(o.status || '').toLowerCase().trim();
+      const isDelivered = st === 'delivered' || st === 'completed';
       if (isDelivered) {
         revenue += amt;
       } else {
         activeOrders++;
       }
-      if (o.date) {
+      if (isDelivered && o.date) {
         const d = new Date(o.date);
         if (d.getFullYear() === currentYear) {
           monthlyRev[d.getMonth()] += amt;
