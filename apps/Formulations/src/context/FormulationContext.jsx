@@ -52,7 +52,7 @@ export const mapReactToDbFormulation = (reactForm) => {
       if (n < 100000) bNo = `B-${String(n).padStart(2, '0')}`;
     }
   } else {
-    bNo = 'B-01';
+    bNo = '';
   }
   return {
     product_id: parseInt(reactForm.productId, 10),

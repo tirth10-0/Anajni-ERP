@@ -47,7 +47,7 @@
         }
 
         if (path === 'formulations' && method === 'GET') {
-          const { data: forms, error: formsErr } = await client.from('formulations').select('*').order('id', { ascending: false });
+          const { data: forms, error: formsErr } = await client.from('formulations').select('*').neq('status', 'Production').order('id', { ascending: false });
           if (formsErr) throw formsErr;
           
           const { data: ings, error: ingsErr } = await client.from('formulation_ingredients').select('*');
@@ -123,18 +123,22 @@
             prodId = Number(prodId);
           }
 
-          let batchNo = body.batch_no;
-          if (!batchNo) {
-            const { data: allForms } = await client.from('formulations').select('batch_no');
-            let maxNum = 0;
-            (allForms || []).forEach(f => {
-              const match = String(f.batch_no || '').match(/^(?:BATCH|B)-(\d+)$/i);
-              if (match) {
-                const n = parseInt(match[1], 10);
-                if (n > maxNum && n < 100000) maxNum = n;
-              }
-            });
-            batchNo = `BATCH-${String(maxNum + 1).padStart(2, '0')}`;
+          let batchNo = body.batch_no ? String(body.batch_no).trim() : '';
+          const { data: allForms } = await client.from('formulations').select('batch_no');
+          let maxNum = 0;
+          const existingNos = new Set();
+          (allForms || []).forEach(f => {
+            const raw = String(f.batch_no || '').trim();
+            if (raw) existingNos.add(raw.toUpperCase());
+            const match = raw.match(/^(?:BATCH|B)-?(\d+)$/i);
+            if (match) {
+              const n = parseInt(match[1], 10);
+              if (n > maxNum && n < 100000) maxNum = n;
+            }
+          });
+
+          if (!batchNo || existingNos.has(batchNo.toUpperCase())) {
+            batchNo = `B-${String(maxNum + 1).padStart(2, '0')}`;
           }
 
           const payload = {

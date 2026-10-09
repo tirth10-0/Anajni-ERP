@@ -5,27 +5,75 @@ let cachedProducts = [];
 let cachedInventory = [];
 let editingProductionId = null;
 let currentLines = [];
+let hasDedicatedTables = null;
+
+async function checkDedicatedTables() {
+  if (hasDedicatedTables !== null) return hasDedicatedTables;
+  try {
+    const { data, error } = await window.dbClient.from('production_batches').select('id').limit(1);
+    hasDedicatedTables = !error;
+  } catch (_) {
+    hasDedicatedTables = false;
+  }
+  return hasDedicatedTables;
+}
 
 async function loadData() {
   try {
     updatePageDebug('Loading...', '#0C3925');
     
-    // Parallelize all queries for fast loading
-    const [prodRes, invRes, fRes, ingsRes] = await Promise.all([
-      window.dbClient.from('products').select('id, name'),
-      window.dbClient.from('inventory_items').select('id, name, unit'),
-      window.dbClient.from('formulations').select('*').order('id', { ascending: false }),
-      window.dbClient.from('formulation_ingredients').select('*')
-    ]);
-
-    cachedProducts = prodRes.data || [];
-    cachedInventory = invRes.data || [];
-    
+    const isDedicated = await checkDedicatedTables();
     let prodBatches = [];
-    const fData = fRes.data;
-    const fError = fRes.error;
-      
-    if (!fError && fData) {
+
+    if (isDedicated) {
+      // 1. Dedicated production_batches and production_ingredients tables
+      const [prodRes, invRes, pbRes, piRes] = await Promise.all([
+        window.dbClient.from('products').select('id, name'),
+        window.dbClient.from('inventory_items').select('id, name, unit'),
+        window.dbClient.from('production_batches').select('*').order('id', { ascending: false }),
+        window.dbClient.from('production_ingredients').select('*')
+      ]);
+
+      cachedProducts = prodRes.data || [];
+      cachedInventory = invRes.data || [];
+
+      const allIngs = piRes.data || [];
+      const ingsByProdId = {};
+      allIngs.forEach(ing => {
+        if (!ingsByProdId[ing.production_id]) ingsByProdId[ing.production_id] = [];
+        ingsByProdId[ing.production_id].push({
+          id: ing.id,
+          inventory_id: ing.inventory_id,
+          inventory_name: ing.inventory_name,
+          quantity_used: ing.quantity_used || 0,
+          unit: ing.unit || 'Kg'
+        });
+      });
+
+      prodBatches = (pbRes.data || []).map(b => ({
+        id: b.id,
+        batch_no: formatBatchNo(b.batch_no),
+        product_id: b.product_id,
+        product_name: b.product_name,
+        formula_name: b.formula_name || b.product_name,
+        date: b.date,
+        quantity_produced: b.quantity_produced || 0,
+        notes: b.notes,
+        production_ingredients: ingsByProdId[b.id] || []
+      }));
+    } else {
+      // 2. Fallback: Only fetch entries explicitly recorded as Production (status = 'Production')
+      // Formulation recipes (status = 'Draft' / date is null) are STRICTLY excluded
+      const [prodRes, invRes, fRes, ingsRes] = await Promise.all([
+        window.dbClient.from('products').select('id, name'),
+        window.dbClient.from('inventory_items').select('id, name, unit'),
+        window.dbClient.from('formulations').select('*').eq('status', 'Production').order('id', { ascending: false }),
+        window.dbClient.from('formulation_ingredients').select('*')
+      ]);
+
+      cachedProducts = prodRes.data || [];
+      cachedInventory = invRes.data || [];
+
       const allIngs = ingsRes.data || [];
       const ingsByFormId = {};
       allIngs.forEach(ing => {
@@ -33,14 +81,15 @@ async function loadData() {
         ingsByFormId[ing.formulation_id].push({
           id: ing.id,
           inventory_id: ing.product_id,
+          inventory_name: ing.product_name,
           quantity_used: ing.quantity || 0,
           unit: ing.unit || 'Kg'
         });
       });
 
-      prodBatches = fData.map(f => ({
+      prodBatches = (fRes.data || []).map(f => ({
         id: f.id,
-        batch_no: formatBatchNo(f.batch_no, f.id),
+        batch_no: formatBatchNo(f.batch_no),
         product_id: f.product_id,
         product_name: f.product_name,
         formula_name: f.product_name,
@@ -77,8 +126,8 @@ function populateProductSelect() {
   if (window.UniversalSearchSelect) new UniversalSearchSelect(select);
 }
 
-function formatBatchNo(batchNo, id) {
-  if (!batchNo) return id ? `B-${String(id).padStart(2, '0')}` : '-';
+function formatBatchNo(batchNo) {
+  if (!batchNo) return '-';
   const s = String(batchNo).trim();
   const m = s.match(/^(?:BATCH|B)-?(\d+)$/i);
   if (m) {
@@ -92,17 +141,17 @@ function renderTable(data) {
   const tbody = document.querySelector('#production-table tbody');
   if (!tbody) return;
   
-  if (!data.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-state"><h3>No production batches found</h3><p>Create your first batch.</p></div></td></tr>`;
+  if (!data || !data.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><div class="empty-state"><h3>No production batches found</h3><p>Click "New Entry" to log a manufacturing batch.</p></div></td></tr>`;
     return;
   }
   
   tbody.innerHTML = data.map(b => {
-    const displayBatch = formatBatchNo(b.batch_no, b.id);
+    const displayBatch = formatBatchNo(b.batch_no);
     return `<tr>
       <td class="cell-bold">${displayBatch}</td>
       <td>${b.product_name || '-'}</td>
-      <td>${b.formula_name || '-'}</td>
+      <td>${b.formula_name || b.product_name || '-'}</td>
       <td>${UTILS.fmtDate(b.date)}</td>
       <td>${b.quantity_produced || 0}</td>
       <td>
@@ -119,15 +168,30 @@ function renderTable(data) {
 
 async function getNextProductionBatchNo() {
   try {
-    const { data: formBatches } = await window.dbClient
-      .from('formulations')
-      .select('id, batch_no');
-      
     let maxNum = 0;
-    const all = [...(allProductions || []), ...(formBatches || [])];
-    for (const b of all) {
-      if (b.batch_no && typeof b.batch_no === 'string') {
-        const match = b.batch_no.match(/^(?:BATCH|B)-?(\d+)$/i);
+    const isDedicated = await checkDedicatedTables();
+    let allBatchStrings = [];
+
+    if (isDedicated) {
+      const { data: pbData } = await window.dbClient.from('production_batches').select('batch_no');
+      (pbData || []).forEach(b => b.batch_no && allBatchStrings.push(b.batch_no));
+    } else {
+      const { data: formData } = await window.dbClient.from('formulations').select('batch_no').eq('status', 'Production');
+      (formData || []).forEach(b => b.batch_no && allBatchStrings.push(b.batch_no));
+    }
+
+    // Include in-memory allProductions
+    (allProductions || []).forEach(b => b.batch_no && allBatchStrings.push(b.batch_no));
+
+    // Also scan stock_batches to prevent any overlap
+    try {
+      const { data: stockBatches } = await window.dbClient.from('stock_batches').select('batch_no').like('batch_no', 'B-%');
+      (stockBatches || []).forEach(b => b.batch_no && allBatchStrings.push(b.batch_no));
+    } catch (_) {}
+
+    for (const bStr of allBatchStrings) {
+      if (bStr && typeof bStr === 'string') {
+        const match = bStr.trim().match(/^(?:BATCH|B)-?(\d+)$/i);
         if (match) {
           const n = parseInt(match[1], 10);
           if (!isNaN(n) && n > maxNum && n < 100000) {
@@ -226,7 +290,7 @@ function renderIngredientsTable() {
   if (!tbody) return;
   
   if (currentLines.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="4" style="text-align:center; padding:15px; color:var(--text-muted); font-size:13px;">No items added.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5" style="text-align:center; padding:15px; color:var(--text-muted); font-size:13px;">No items added.</td></tr>';
     return;
   }
   
@@ -286,13 +350,13 @@ function renderIngredientsTable() {
   }, 10);
 }
 
-// Helper: Revert any previously applied stock batch deductions/creations for a production batch
+// Helper: Revert previously applied stock batches/movements for a production batch
 async function revertProductionStock(prodBatch) {
   if (!prodBatch) return;
   const batchNo = prodBatch.batch_no;
 
   // 1. Remove produced output batch(es) from stock_batches matching this batch_no
-  if (batchNo) {
+  if (batchNo && batchNo !== '-') {
     await window.dbClient.from('stock_batches')
       .delete()
       .eq('item_type', 'Inventory')
@@ -303,12 +367,11 @@ async function revertProductionStock(prodBatch) {
   const ings = prodBatch.production_ingredients || [];
   for (const ing of ings) {
     const rawQty = parseFloat(ing.quantity_used) || 0;
-    const isConsumed = rawQty > 0; // In formulation_ingredients, positive quantity = raw material consumed
+    const isConsumed = rawQty > 0;
     const itemId = parseInt(ing.inventory_id, 10);
     if (!itemId) continue;
 
     if (isConsumed) {
-      // Return consumed quantity back to the oldest existing stock_batch for this item
       const { data: batches } = await window.dbClient.from('stock_batches')
         .select('*')
         .eq('item_id', itemId)
@@ -322,7 +385,6 @@ async function revertProductionStock(prodBatch) {
           .update({ current_qty: cur + rawQty })
           .eq('id', batches[0].id);
       } else {
-        // Create an opening batch if none found
         const invObj = cachedInventory.find(i => i.id == itemId);
         await window.dbClient.from('stock_batches').insert([{
           item_id: itemId,
@@ -340,7 +402,7 @@ async function revertProductionStock(prodBatch) {
   }
 
   // Remove corresponding movements
-  if (batchNo) {
+  if (batchNo && batchNo !== '-') {
     try {
       await window.dbClient.from('stock_movements').delete().eq('reference', batchNo);
     } catch (_) {}
@@ -359,61 +421,105 @@ async function saveProduction() {
   if (saveBtn) APP.setButtonLoading(saveBtn, true, editingProductionId ? 'Updating...' : 'Saving...');
 
   try {
+    const isDedicated = await checkDedicatedTables();
     const prodObj = cachedProducts.find(p => p.id == d.product_id);
     let finalBatchNo = d.batch_no ? formatBatchNo(d.batch_no) : '';
-    if (!finalBatchNo || finalBatchNo === '-') {
+
+    // Check for collision or auto-generate
+    const isCollision = allProductions.some(x => x.batch_no === finalBatchNo && x.id !== editingProductionId);
+    if (!finalBatchNo || finalBatchNo === '-' || isCollision) {
       finalBatchNo = await getNextProductionBatchNo();
     }
     
-    const payload = {
-      product_id: parseInt(d.product_id),
-      product_name: prodObj ? prodObj.name : '',
-      batch_no: finalBatchNo,
-      batch_size: qtyProduced,
-      batch_unit: 'Kg',
-      date: d.date,
-      status: 'Completed',
-      notes: d.notes || '',
-      total_quantity: qtyProduced
-    };
-    
     let savedId = editingProductionId;
-    
-    if (editingProductionId) {
-      // Revert previous stock changes before applying new edits
-      const oldProd = allProductions.find(x => x.id === editingProductionId);
-      if (oldProd) {
-        await revertProductionStock(oldProd);
+
+    if (isDedicated) {
+      // 1. Save to dedicated production_batches
+      const payload = {
+        batch_no: finalBatchNo,
+        product_id: parseInt(d.product_id, 10),
+        product_name: prodObj ? prodObj.name : '',
+        formula_name: prodObj ? prodObj.name : '',
+        quantity_produced: qtyProduced,
+        date: d.date || UTILS.todayStr(),
+        notes: d.notes || ''
+      };
+
+      if (editingProductionId) {
+        const oldProd = allProductions.find(x => x.id === editingProductionId);
+        if (oldProd) await revertProductionStock(oldProd);
+
+        const { error } = await window.dbClient.from('production_batches').update(payload).eq('id', editingProductionId);
+        if (error) throw error;
+        await window.dbClient.from('production_ingredients').delete().eq('production_id', editingProductionId);
+      } else {
+        const { data, error } = await window.dbClient.from('production_batches').insert([payload]).select();
+        if (error) throw error;
+        savedId = data[0].id;
       }
 
-      const { error } = await window.dbClient.from('formulations').update(payload).eq('id', editingProductionId);
-      if (error) throw error;
-      
-      await window.dbClient.from('formulation_ingredients').delete().eq('formulation_id', editingProductionId);
+      if (validLines.length > 0) {
+        const ingPayload = validLines.map(line => {
+          const invObj = cachedInventory.find(i => i.id == line.inventory_id);
+          const qty = parseFloat(line.quantity) || 0;
+          const finalQty = line.action === 'INCREASE' ? -qty : qty;
+          return {
+            production_id: savedId,
+            inventory_id: parseInt(line.inventory_id, 10),
+            inventory_name: invObj ? invObj.name : '',
+            quantity_used: finalQty
+          };
+        });
+        const { error: ingErr } = await window.dbClient.from('production_ingredients').insert(ingPayload);
+        if (ingErr) throw ingErr;
+      }
     } else {
-      const { data, error } = await window.dbClient.from('formulations').insert([payload]).select();
-      if (error) throw error;
-      savedId = data[0].id;
-    }
-    
-    if (validLines.length > 0) {
-      const ingPayload = validLines.map(line => {
-        const invObj = cachedInventory.find(i => i.id == line.inventory_id);
-        const qty = parseFloat(line.quantity) || 0;
-        const finalQty = line.action === 'INCREASE' ? -qty : qty;
-        
-        return {
-          formulation_id: savedId,
-          product_id: parseInt(line.inventory_id),
-          product_name: invObj ? invObj.name : '',
-          quantity: finalQty,
-          unit: line.unit || (invObj ? invObj.unit : 'Kg')
-        };
-      });
-      const { error: ingErr } = await window.dbClient.from('formulation_ingredients').insert(ingPayload);
-      if (ingErr) throw ingErr;
+      // 2. Fallback: Save to formulations table with status = 'Production' (strictly isolated from recipes)
+      const payload = {
+        product_id: parseInt(d.product_id, 10),
+        product_name: prodObj ? prodObj.name : '',
+        batch_no: finalBatchNo,
+        batch_size: qtyProduced,
+        batch_unit: 'Kg',
+        date: d.date || UTILS.todayStr(),
+        status: 'Production',
+        notes: d.notes || '',
+        total_quantity: qtyProduced
+      };
 
-      // Sync Inventory Stock Batches
+      if (editingProductionId) {
+        const oldProd = allProductions.find(x => x.id === editingProductionId);
+        if (oldProd) await revertProductionStock(oldProd);
+
+        const { error } = await window.dbClient.from('formulations').update(payload).eq('id', editingProductionId);
+        if (error) throw error;
+        await window.dbClient.from('formulation_ingredients').delete().eq('formulation_id', editingProductionId);
+      } else {
+        const { data, error } = await window.dbClient.from('formulations').insert([payload]).select();
+        if (error) throw error;
+        savedId = data[0].id;
+      }
+
+      if (validLines.length > 0) {
+        const ingPayload = validLines.map(line => {
+          const invObj = cachedInventory.find(i => i.id == line.inventory_id);
+          const qty = parseFloat(line.quantity) || 0;
+          const finalQty = line.action === 'INCREASE' ? -qty : qty;
+          return {
+            formulation_id: savedId,
+            product_id: parseInt(line.inventory_id, 10),
+            product_name: invObj ? invObj.name : '',
+            quantity: finalQty,
+            unit: line.unit || (invObj ? invObj.unit : 'Kg')
+          };
+        });
+        const { error: ingErr } = await window.dbClient.from('formulation_ingredients').insert(ingPayload);
+        if (ingErr) throw ingErr;
+      }
+    }
+
+    // 3. Sync Inventory Stock Batches
+    if (validLines.length > 0) {
       for (const line of validLines) {
         const itemId = parseInt(line.inventory_id, 10);
         const invObj = cachedInventory.find(i => i.id == itemId);
@@ -421,7 +527,6 @@ async function saveProduction() {
         const isIncrease = (line.action === 'INCREASE');
 
         if (isIncrease) {
-          // Add/increase inventory batch
           const prodBatchPayload = {
             item_id: itemId,
             item_name: invObj ? invObj.name : 'Produced Good',
@@ -435,7 +540,6 @@ async function saveProduction() {
           };
           await window.dbClient.from('stock_batches').insert([prodBatchPayload]);
 
-          // Optional stock_movements record
           try {
             await window.dbClient.from('stock_movements').insert([{
               item_id: itemId,
@@ -444,12 +548,12 @@ async function saveProduction() {
               quantity: qty,
               unit: line.unit || (invObj ? invObj.unit : 'Kg'),
               reference: finalBatchNo,
-              notes: `Production output for ${payload.product_name}`,
+              notes: `Production output for ${prodObj ? prodObj.name : 'Finished Good'}`,
               created_at: new Date().toISOString()
             }]);
           } catch (_) {}
         } else {
-          // DECREASE: Deduct from available stock_batches (FIFO)
+          // DECREASE: FIFO deduction
           let remainingToDeduct = qty;
           const { data: batches } = await window.dbClient.from('stock_batches')
             .select('*')
@@ -469,7 +573,6 @@ async function saveProduction() {
             }
           }
 
-          // Optional stock_movements record
           try {
             await window.dbClient.from('stock_movements').insert([{
               item_id: itemId,
@@ -509,13 +612,19 @@ async function deleteProduction(id) {
     try {
       const prodToDelete = allProductions.find(x => x.id === id);
       if (prodToDelete) {
-        // Revert raw materials and delete production stock batch
         await revertProductionStock(prodToDelete);
       }
 
-      await window.dbClient.from('formulation_ingredients').delete().eq('formulation_id', id);
-      const { error } = await window.dbClient.from('formulations').delete().eq('id', id);
-      if (error) throw error;
+      const isDedicated = await checkDedicatedTables();
+      if (isDedicated) {
+        await window.dbClient.from('production_ingredients').delete().eq('production_id', id);
+        const { error } = await window.dbClient.from('production_batches').delete().eq('id', id);
+        if (error) throw error;
+      } else {
+        await window.dbClient.from('formulation_ingredients').delete().eq('formulation_id', id);
+        const { error } = await window.dbClient.from('formulations').delete().eq('id', id);
+        if (error) throw error;
+      }
       
       APP.showToast('Production batch deleted and inventory restored!', 'success');
       loadData();
@@ -530,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('production-search-input')?.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = allProductions.filter(b => 
-      (formatBatchNo(b.batch_no, b.id) || '').toLowerCase().includes(term) ||
+      (formatBatchNo(b.batch_no) || '').toLowerCase().includes(term) ||
       (b.batch_no || '').toLowerCase().includes(term) ||
       (b.product_name || '').toLowerCase().includes(term)
     );
@@ -539,33 +648,3 @@ document.addEventListener('DOMContentLoaded', () => {
   
   setTimeout(() => loadData(), 100);
 });
-
-// Auto migrate legacy production batches to standard B-01, B-02...
-(async function migrateLegacyProductionBatches() {
-  try {
-    if (!window.dbClient) return;
-    const { data: forms } = await window.dbClient.from('formulations').select('id, batch_no').order('id', { ascending: true });
-    if (forms && forms.length > 0) {
-      let seq = 1;
-      for (const f of forms) {
-        const b = String(f.batch_no || '');
-        if (/^BATCH-\d+/i.test(b) || /^B-\d{6,}/i.test(b) || !b) {
-          const newNo = `B-${String(seq).padStart(2, '0')}`;
-          await window.dbClient.from('formulations').update({ batch_no: newNo }).eq('id', f.id);
-          if (b) {
-            await window.dbClient.from('stock_batches').update({ batch_no: newNo }).eq('batch_no', b);
-          }
-        } else {
-          const match = b.match(/^B-(\d+)$/i);
-          if (match) {
-            const n = parseInt(match[1], 10);
-            if (n >= seq) seq = n;
-          }
-        }
-        seq++;
-      }
-    }
-  } catch (e) {
-    console.warn('Production batch migration notice:', e);
-  }
-})();

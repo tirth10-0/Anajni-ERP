@@ -470,22 +470,22 @@ const FormulationEditor = () => {
                 </div>
               </div>
 
-              <div style={{ overflowX: 'auto', paddingBottom: activeIngredientDropdownIndex !== null ? '180px' : '4px' }}>
-                <table className="line-items-table">
+              <div style={{ overflowX: 'auto', paddingBottom: activeIngredientDropdownIndex !== null ? '240px' : '4px' }}>
+                <table className="line-items-table formulation-ingredients-table" style={{ tableLayout: 'auto', minWidth: '720px' }}>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left', minWidth: '220px' }}>INGREDIENT NAME</th>
-                      <th style={{ width: '100px', textAlign: 'center' }}>%</th>
-                      <th style={{ width: '40px', textAlign: 'center', color: 'var(--accent)', fontWeight: '700' }}>OR</th>
-                      <th style={{ width: '150px', textAlign: 'center' }}>QTY</th>
-                      <th style={{ width: '130px', textAlign: 'right' }}>COST/UNIT (₹)</th>
-                      <th style={{ width: '48px' }}></th>
+                      <th style={{ textAlign: 'left', minWidth: '300px', width: '45%' }}>INGREDIENT NAME</th>
+                      <th style={{ width: '100px', minWidth: '90px', textAlign: 'center' }}>%</th>
+                      <th style={{ width: '40px', minWidth: '40px', textAlign: 'center', color: 'var(--accent)', fontWeight: '700' }}>OR</th>
+                      <th style={{ width: '160px', minWidth: '150px', textAlign: 'center' }}>QTY</th>
+                      <th style={{ width: '130px', minWidth: '120px', textAlign: 'right' }}>COST/UNIT (₹)</th>
+                      <th style={{ width: '48px', minWidth: '48px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {formulation.ingredients.map((ingredient, index) => (
                       <tr key={index}>
-                        <td style={{ position: 'relative' }}>
+                        <td style={{ position: 'relative', minWidth: '280px' }}>
                           <span className="mobile-label">Ingredient Name</span>
                           <div style={{ position: 'relative', width: '100%' }}>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -504,7 +504,7 @@ const FormulationEditor = () => {
                                 }}
                                 placeholder="Select or type technical..."
                                 className="form-input"
-                                style={{ width: '100%', paddingRight: '28px' }}
+                                style={{ width: '100%', paddingRight: '32px', height: '40px', fontSize: '13.5px' }}
                               />
                               <button
                                 type="button"
@@ -515,14 +515,15 @@ const FormulationEditor = () => {
                                   right: '8px',
                                   background: 'none',
                                   border: 'none',
-                                  padding: '2px',
+                                  padding: '4px',
                                   cursor: 'pointer',
                                   color: 'var(--text-muted, #94a3b8)',
                                   display: 'flex',
-                                  alignItems: 'center'
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
                                 }}
                               >
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '14px', height: '14px' }}>
                                   <polyline points="6 9 12 15 18 9" />
                                 </svg>
                               </button>
@@ -533,17 +534,19 @@ const FormulationEditor = () => {
                               <div
                                 style={{
                                   position: 'absolute',
-                                  top: '100%',
+                                  top: 'calc(100% + 4px)',
                                   left: 0,
-                                  right: 0,
-                                  backgroundColor: 'var(--surface, #14171d)',
-                                  border: '1px solid var(--border, rgba(255,255,255,0.15))',
-                                  borderRadius: '6px',
-                                  maxHeight: '220px',
+                                  minWidth: '320px',
+                                  width: '100%',
+                                  maxWidth: '460px',
+                                  backgroundColor: '#ffffff',
+                                  border: '1.5px solid #cbd5e1',
+                                  borderRadius: '8px',
+                                  maxHeight: '260px',
                                   overflowY: 'auto',
+                                  overflowX: 'hidden',
                                   zIndex: 99999,
-                                  marginTop: '4px',
-                                  boxShadow: '0 12px 28px rgba(0,0,0,0.65)'
+                                  boxShadow: '0 12px 28px rgba(0,0,0,0.18), 0 4px 10px rgba(0,0,0,0.08)'
                                 }}
                               >
                                 {getFilteredTechnicalItems(ingredient.name).map(item => (
@@ -551,33 +554,46 @@ const FormulationEditor = () => {
                                     key={item.id}
                                     onMouseDown={() => handleSelectIngredientItem(index, item)}
                                     style={{
-                                      padding: '8px 12px',
+                                      padding: '10px 14px',
                                       cursor: 'pointer',
-                                      borderBottom: '1px solid var(--border, rgba(255,255,255,0.06))',
+                                      borderBottom: '1px solid #f1f5f9',
                                       fontSize: '13px',
-                                      color: 'var(--text-primary, #fff)',
+                                      color: '#0f172a',
                                       display: 'flex',
                                       justifyContent: 'space-between',
-                                      alignItems: 'center'
+                                      alignItems: 'center',
+                                      gap: '12px',
+                                      transition: 'background-color 0.15s ease'
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(12, 57, 37, 0.45)'}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                   >
-                                    <div>
-                                      <div style={{ fontWeight: 600 }}>{item.name}</div>
-                                      <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)' }}>
+                                    <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+                                      <div style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.3' }}>
+                                        {item.name}
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                                         {item.category || 'Technical'}{item.item_subtype ? ` • ${item.item_subtype}` : ''}
                                       </div>
                                     </div>
                                     {item.unit && (
-                                      <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px' }}>
+                                      <span style={{
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        color: '#0C3925',
+                                        background: '#e6f5ee',
+                                        padding: '3px 8px',
+                                        borderRadius: '4px',
+                                        flexShrink: 0,
+                                        whiteSpace: 'nowrap'
+                                      }}>
                                         {item.unit}
                                       </span>
                                     )}
                                   </div>
                                 ))}
                                 {getFilteredTechnicalItems(ingredient.name).length === 0 && (
-                                  <div style={{ padding: '10px 12px', fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
+                                  <div style={{ padding: '12px 14px', fontSize: '12.5px', color: '#64748b' }}>
                                     No matching technical inventory item. (Will keep custom: "{ingredient.name}")
                                   </div>
                                 )}
