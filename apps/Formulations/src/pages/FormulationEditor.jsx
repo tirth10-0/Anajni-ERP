@@ -471,7 +471,7 @@ const FormulationEditor = () => {
               </div>
 
               <div style={{ overflowX: 'auto', paddingBottom: activeIngredientDropdownIndex !== null ? '240px' : '4px' }}>
-                <table className="line-items-table formulation-ingredients-table" style={{ tableLayout: 'auto', minWidth: '720px' }}>
+                <table className="line-items-table formulation-ingredients-table" style={{ tableLayout: 'auto' }}>
                   <thead>
                     <tr>
                       <th style={{ textAlign: 'left', minWidth: '300px', width: '45%' }}>INGREDIENT NAME</th>
@@ -485,10 +485,10 @@ const FormulationEditor = () => {
                   <tbody>
                     {formulation.ingredients.map((ingredient, index) => (
                       <tr key={index}>
-                        <td style={{ position: 'relative', minWidth: '280px' }}>
+                        <td style={{ position: 'relative' }}>
                           <span className="mobile-label">Ingredient Name</span>
                           <div style={{ position: 'relative', width: '100%' }}>
-                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
                               <input
                                 type="text"
                                 value={ingredient.name}
@@ -532,13 +532,14 @@ const FormulationEditor = () => {
                             {/* Dropdown Menu */}
                             {activeIngredientDropdownIndex === index && (
                               <div
+                                className="ingredient-dropdown-menu"
                                 style={{
                                   position: 'absolute',
                                   top: 'calc(100% + 4px)',
                                   left: 0,
-                                  minWidth: '320px',
+                                  right: 0,
                                   width: '100%',
-                                  maxWidth: '460px',
+                                  boxSizing: 'border-box',
                                   backgroundColor: '#ffffff',
                                   border: '1.5px solid #cbd5e1',
                                   borderRadius: '8px',
@@ -554,7 +555,7 @@ const FormulationEditor = () => {
                                     key={item.id}
                                     onMouseDown={() => handleSelectIngredientItem(index, item)}
                                     style={{
-                                      padding: '10px 14px',
+                                      padding: '10px 12px',
                                       cursor: 'pointer',
                                       borderBottom: '1px solid #f1f5f9',
                                       fontSize: '13px',
@@ -562,13 +563,15 @@ const FormulationEditor = () => {
                                       display: 'flex',
                                       justifyContent: 'space-between',
                                       alignItems: 'center',
-                                      gap: '12px',
+                                      gap: '10px',
+                                      boxSizing: 'border-box',
+                                      width: '100%',
                                       transition: 'background-color 0.15s ease'
                                     }}
                                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
                                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                   >
-                                    <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+                                    <div style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
                                       <div style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.3' }}>
                                         {item.name}
                                       </div>
@@ -579,9 +582,10 @@ const FormulationEditor = () => {
                                     {item.unit && (
                                       <span style={{
                                         fontSize: '11px',
-                                        fontWeight: 600,
+                                        fontWeight: 700,
                                         color: '#0C3925',
                                         background: '#e6f5ee',
+                                        border: '1px solid #bbf0d6',
                                         padding: '3px 8px',
                                         borderRadius: '4px',
                                         flexShrink: 0,
